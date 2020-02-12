@@ -1,5 +1,5 @@
 INCLUDE_FLAGS := -I.
-CPPFLAGS := $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti
+CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti
 CC := g++
 
 .PHONY: run clean all install
@@ -12,8 +12,7 @@ init.o \
 icxxabi.o \
 devices/IO.o \
 devices/Serial.o \
-	
-all: os.iso
+devices/CPU.o \
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
@@ -31,8 +30,12 @@ os.iso: os.kernel
 run: os.iso
 	qemu-system-i386 -serial stdio $<
 
+debug: os.iso
+	qemu-system-i386 -s -S -serial stdio $<
+
 clean:
 	rm -f *.o
+	rm -f devices/*.o
 	rm -f os.kernel
 	rm -f os.iso
-	rm ../bootdir/boot/os.kernel
+	rm -f ../bootdir/boot/os.kernel
