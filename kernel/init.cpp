@@ -1,6 +1,7 @@
 #include <icxxabi.h>
 #include <devices/IO.h>
 #include <devices/Serial.h>
+#include <devices/CPU.h>
 
 static inline uint8_t vga_entry_color(uint8_t fg, uint8_t bg) 
 {
@@ -14,6 +15,10 @@ static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
 
 extern "C" int kernel_main(){
 	Serial serial(COM1);
-	serial.write("hello", 5);
+	serial.write("hello\n", 6);
+
+	initialize_gdt_table();
+	serial.write("done", 4);
+
 	return 0;
 }
