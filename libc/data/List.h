@@ -25,6 +25,14 @@ public:
 template <typename T>
 class List {
 public:
+	void remove(T* removee){
+		if(removee == head)
+			head = removee->next;
+		if(removee == tail)
+			tail = removee->previous;
+		t->remove();
+	}
+
 	void insert(T* insertee){
 		if(head == nullptr){
 			head = insertee;
