@@ -7,6 +7,7 @@ CC := g++
 
 
 OBJS =\
+string.o \
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
