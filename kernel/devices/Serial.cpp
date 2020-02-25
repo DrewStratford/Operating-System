@@ -1,6 +1,9 @@
+#include <string.h>
+
 #include <devices/Serial.h>
 #include <devices/IO.h>
 
+Serial p_com1(COM1);
 Serial::Serial(int port){
 	m_port = port;
 	IO::out8(m_port + 1, 0x00);    // Disable all interrupts
@@ -10,6 +13,10 @@ Serial::Serial(int port){
 	IO::out8(m_port + 3, 0x03);    // 8 bits, no parity, one stop bit
 	IO::out8(m_port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
 	IO::out8(m_port + 4, 0x0B); 
+}
+
+Serial& com1(){
+	return p_com1;
 }
 
 bool Serial::is_empty(){
@@ -28,4 +35,8 @@ int Serial::write(char* cs, size_t size){
 	}
 
 	return size;
+}
+
+int Serial::write_string(char* string){
+	write(string, strlen(string));
 }
