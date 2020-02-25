@@ -10,9 +10,15 @@ OBJS =\
 boot.o \
 init.o \
 icxxabi.o \
+Thread.o \
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
+
+all: os.iso
+
+libc:
+	make -C ../libc
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
@@ -23,7 +29,7 @@ devices/CPU.o \
 os.kernel: $(OBJS)
 	$(CC) -T linker.ld -o $@ $(CPPFLAGS) $(OBJS)
 
-os.iso: os.kernel
+os.iso: libc os.kernel
 	cp os.kernel ../bootdir/boot/
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
 
@@ -39,3 +45,4 @@ clean:
 	rm -f os.kernel
 	rm -f os.iso
 	rm -f ../bootdir/boot/os.kernel
+	make -C ../libc clean
