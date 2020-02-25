@@ -30,7 +30,7 @@ public:
 			head = removee->next;
 		if(removee == tail)
 			tail = removee->previous;
-		t->remove();
+		removee->remove();
 	}
 
 	void insert(T* insertee){
