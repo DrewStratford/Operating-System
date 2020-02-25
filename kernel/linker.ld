@@ -1,4 +1,5 @@
 ENTRY(_start)
+GROUP(../libc/libk.a)
 
 SECTIONS
 {
