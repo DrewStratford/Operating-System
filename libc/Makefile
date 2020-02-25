@@ -7,7 +7,6 @@ CC := g++
 
 
 OBJS =\
-data/List.o \
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
