@@ -36,6 +36,19 @@ _start:
  
 	;
 	push ebx		;push the GRUB multiboot info
+
+	extern __CTOR_LIST__
+	extern __CTOR_END__
+
+	mov ebx, __CTOR_LIST__
+	jmp .call_ctors_end
+.call_ctors:
+	call [ebx]
+	add ebx, 4
+.call_ctors_end:
+	cmp ebx, __CTOR_END__
+	jb .call_ctors
+
 	extern kernel_main
 	call kernel_main
 
