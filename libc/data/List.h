@@ -87,6 +87,10 @@ public:
 		return head;
 	}
 
+	bool is_empty(){
+		return head == nullptr;
+	}
+
 	void mapM_(auto (*f)(T& t) -> void){
 		for (T* t = head; t != nullptr; t = t->next){
 			f(*t);
