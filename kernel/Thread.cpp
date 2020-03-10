@@ -40,8 +40,11 @@ void Thread::yield(){
 
 	com1().write_string("about to switch\n");
 	Thread *old_thread = current_thread;
+	old_thread->set_state(ThreadState::Runnable);
 	current_thread = runnable_threads.pop();
 	runnable_threads.insert_end(old_thread);
+
+	current_thread->set_state(ThreadState::Running);
 	switch_thread(*old_thread, *current_thread);
 }
 
@@ -49,4 +52,5 @@ void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
 	runnable_threads.remove(&kernel_thread);
 	current_thread = &kernel_thread;
+	current_thread->set_state(ThreadState::Running);
 }
