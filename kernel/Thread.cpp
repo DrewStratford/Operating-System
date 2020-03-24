@@ -47,12 +47,20 @@ void Thread::yield(){
 	com1().write_string("about to switch\n");
 	Thread *old_thread = current_thread;
 	current_thread = runnable_threads.pop();
+	if(current_thread == old_thread)
+		return;
 
 	if(old_thread->get_state() == ThreadState::Running)
 		old_thread->reschedule();
 
 	current_thread->set_state(ThreadState::Running);
 	switch_thread(*old_thread, *current_thread);
+}
+
+void Thread::die(){
+	current_thread->set_state(ThreadState::Dead);
+	dying_threads.insert_end(current_thread);
+	yield();
 }
 
 void Thread::initialize(){

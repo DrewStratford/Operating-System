@@ -11,6 +11,7 @@ void foo(){
 		com1().write_string("foo()\n");
 		Thread::yield();
 	}
+	Thread::die();
 }
 
 extern "C" int kernel_main(){
@@ -18,7 +19,7 @@ extern "C" int kernel_main(){
 	Thread::initialize();
 	Thread::yield();
 	Thread t((uintptr_t)&foo_stack[499], (uintptr_t)foo);
-	for(int i = 0; i < 10; i++){
+	for(int i = 0; i < 20; i++){
 		com1().write_string("kernel_thread\n");
 		Thread::yield();
 	}
