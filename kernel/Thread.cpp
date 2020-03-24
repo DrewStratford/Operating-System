@@ -3,6 +3,7 @@
 #include <devices/Serial.h>
 
 List<Thread> runnable_threads;
+List<Thread> dying_threads;
 Thread kernel_thread;
 Thread *current_thread = &kernel_thread;
 
@@ -22,13 +23,18 @@ void Thread::switch_thread(Thread& from, Thread& to){
 }
 
 Thread::Thread(){
-	runnable_threads.insert(this);
+	reschedule();
 }
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
 	stack_ptr = stack;
 	resume_ptr = start;
-	runnable_threads.insert(this);
+	reschedule();
+}
+
+void Thread::reschedule(){
+	set_state(ThreadState::Runnable);
+	runnable_threads.insert_end(this);
 }
 
 void Thread::yield(){
@@ -40,9 +46,10 @@ void Thread::yield(){
 
 	com1().write_string("about to switch\n");
 	Thread *old_thread = current_thread;
-	old_thread->set_state(ThreadState::Runnable);
 	current_thread = runnable_threads.pop();
-	runnable_threads.insert_end(old_thread);
+
+	if(old_thread->get_state() == ThreadState::Running)
+		old_thread->reschedule();
 
 	current_thread->set_state(ThreadState::Running);
 	switch_thread(*old_thread, *current_thread);

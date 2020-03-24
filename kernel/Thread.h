@@ -19,6 +19,7 @@ public:
 	static void yield();
 	static void initialize();
 
+	void reschedule();
 	ThreadState get_state() const { return state; };
 	void set_state(ThreadState new_state) { state = state; };
 
