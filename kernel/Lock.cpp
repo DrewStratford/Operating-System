@@ -17,3 +17,12 @@ void Lock::unlock(){
 	owner = nullptr;
 	Thread::wake_from_list(wait_list);
 }
+
+ScopedLocker::ScopedLocker(Lock *lock){
+	this->lock = lock;
+	lock->lock();
+}
+
+ScopedLocker::~ScopedLocker(){
+	lock->unlock();
+}

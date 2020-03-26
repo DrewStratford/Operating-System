@@ -11,3 +11,11 @@ public:
 	void lock();
 	void unlock();
 };
+
+class ScopedLocker{
+private:
+	Lock *lock;
+public:
+	ScopedLocker(Lock *lock);
+	~ScopedLocker();
+};
