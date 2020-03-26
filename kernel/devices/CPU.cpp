@@ -67,3 +67,28 @@ void initialize_gdt_table(){
 		:: "m"(gdt_ptr), "a"(0x10)
 		: "memory");
 }
+
+static void asm_dummy(){
+	asm("get_eflags:\n"
+		"	pushf\n"
+		"	pop %%eax\n"
+		"	ret\n" ::);
+}
+
+void sti(){
+	asm("sti");
+}
+
+void cli(){
+	asm("cli");
+}
+
+NoInterrupts::NoInterrupts(){
+	reenable = get_eflags() & 0x200;
+	cli();
+}
+
+NoInterrupts::~NoInterrupts(){
+	if(reenable)
+		sti();
+}

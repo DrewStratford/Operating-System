@@ -90,5 +90,16 @@ struct [[gnu::packed]] TSS{
   uint32_t IOPB;
 };
 
-
 void initialize_gdt_table();
+
+extern "C" uint32_t get_eflags();
+void sti();
+void cli();
+
+class NoInterrupts{
+public:
+	NoInterrupts();
+	~NoInterrupts();
+private:
+	bool reenable { false };
+};
