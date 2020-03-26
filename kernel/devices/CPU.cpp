@@ -92,3 +92,9 @@ NoInterrupts::~NoInterrupts(){
 	if(reenable)
 		sti();
 }
+
+void panic(char *msg){
+	NoInterrupts ni;
+	com1().write_string(msg);
+	asm("hlt");
+}

@@ -103,3 +103,5 @@ public:
 private:
 	bool reenable { false };
 };
+
+void panic(char *);
