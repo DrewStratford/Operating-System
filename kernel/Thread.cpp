@@ -54,6 +54,22 @@ void Thread::wait_for_cpu(){
 	runnable_threads.insert_end(&cpu_blocker);
 }
 
+void Thread::wait_on_list(List<Blocker> &list){
+	Blocker list_blocker(this);
+	set_state(ThreadState::Blocked);
+	list.insert_end(&list_blocker);
+	yield();
+}
+
+void Thread::wake_from_list(List<Blocker> &list){
+	if(list.is_empty())
+		return;
+
+	Blocker *blocker = list.pop();
+	blocker->get_thread()->set_state(ThreadState::Runnable);
+	runnable_threads.insert_end(blocker);
+}
+
 void Thread::yield(){
 
 	if(runnable_threads.is_empty()){

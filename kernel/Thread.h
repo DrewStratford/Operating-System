@@ -11,6 +11,8 @@ enum ThreadState
 	, Dead
 	};
 
+class Blocker;
+
 class Thread : public ListNode<Thread>{
 public:
 	Thread();
@@ -28,8 +30,11 @@ public:
 	static void initialize();
 
 	void wait_for_cpu();
+	void wait_on_list(List<Blocker>&);
+	static void wake_from_list(List<Blocker>&);
 	ThreadState get_state() const { return state; };
 	void set_state(ThreadState new_state) { state = new_state; };
+
 
 private:
 	uintptr_t stack_ptr { 0 };
@@ -54,3 +59,5 @@ protected:
 	Thread *thread;
 	BlockerStatus status { Waiting };
 };
+
+extern Thread *current_thread;

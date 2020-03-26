@@ -11,6 +11,7 @@ boot.o \
 init.o \
 icxxabi.o \
 Thread.o \
+Lock.o	\
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
