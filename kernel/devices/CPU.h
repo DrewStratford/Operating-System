@@ -92,6 +92,26 @@ struct [[gnu::packed]] TSS{
 
 void initialize_gdt_table();
 
+class [[gnu::packed]] IDTEntry{
+public:
+	uint16_t offset_1;
+	uint16_t code_sel;
+	uint8_t zero;
+	uint8_t type;
+	uint16_t offset_2;
+
+	IDTEntry();
+	IDTEntry(uint32_t base, uint8_t type);
+};
+
+class [[gnu::packed]] IDTR{
+public:
+	uint16_t limit;
+	uint32_t base;
+
+	IDTR(uint16_t limit, uint32_t base);
+};
+
 extern "C" uint32_t get_eflags();
 void sti();
 void cli();

@@ -68,6 +68,21 @@ void initialize_gdt_table(){
 		: "memory");
 }
 
+IDTEntry::IDTEntry(){ }
+
+IDTEntry::IDTEntry(uint32_t base, uint8_t type){
+	code_sel = 0x08;	// we always run interrupts as kernel
+	this->type = type;
+	offset_1 = (base & 0xFFFF);
+	offset_2 = (base >> 16) & 0xFFFF;
+	zero = 0;
+}
+
+IDTR::IDTR(uint16_t limit, uint32_t base){
+	this->limit = limit;
+	this->base = base;
+}
+
 static void asm_dummy(){
 	asm("get_eflags:\n"
 		"	pushf\n"

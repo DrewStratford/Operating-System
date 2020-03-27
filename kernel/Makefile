@@ -15,6 +15,7 @@ Lock.o	\
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
+devices/Interrupts.o \
 
 all: os.iso
 
