@@ -35,11 +35,18 @@ public:
 	ThreadState get_state() const { return state; };
 	void set_state(ThreadState new_state) { state = new_state; };
 
+	void set_default_ticks(int ticks) { default_ticks = ticks; };
+	int get_default_ticks() { return default_ticks; };
+	void set_remaining_ticks(int ticks) { remaining_ticks = ticks; };
+	int get_remaining_ticks() { return remaining_ticks; };
 
 private:
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };
 	ThreadState state;
+
+	int default_ticks { 5 };
+	int remaining_ticks { 0 };
 };
 
 enum BlockerStatus

@@ -1,10 +1,12 @@
 #include <devices/Interrupts.h>
-#include <devices/CPU.h>
 #include <devices/IO.h>
 #include <devices/Serial.h>
+#include <Thread.h>
 
 IDTEntry idt_table[256];
 IDTR idtr(0,0);
+
+InterruptCallback callbacks[256];
 
 extern "C" void interrupt_handler(Registers registers);
 
@@ -93,6 +95,9 @@ void initialize_interrupts(){
 	com1().write_string("initializing IDT...\n");
 
 	for(int i = 0; i < 256; i++){
+		callbacks[i] = nullptr;
+	}
+	for(int i = 0; i < 256; i++){
 		idt_table[i] = IDTEntry((uint32_t)irqff_interrupt_entry, 0x8E);
 	}
 	
@@ -160,19 +165,19 @@ void initialize_interrupts(){
 	IO::out8(0x40, 0);
 }
 
+void register_interrupt_callback(InterruptCallback callback, size_t no){
+	callbacks[no] = callback;
+}
+
 extern "C" void interrupt_handler(Registers registers){
-	com1().write_string("handling an interrupt\n");
-	switch(registers.intr){
-		case 0x20:
-			com1().write_string("timer\n");
-			break;
-		case 0x21:
-			{volatile uint8_t c = IO::in8(0x60);}
-			com1().write_string("keyboard\n");
-			break;
-		default:
-			break;
-	};
+	InterruptCallback handler = callbacks[registers.intr];
+
+	if(handler)
+		handler(registers);
+		
 	IO::out8(0xA0, 0x20);
 	IO::out8(0x20, 0x20);
+
+	if(current_thread->get_remaining_ticks() <= 0)
+		Thread::yield();
 }

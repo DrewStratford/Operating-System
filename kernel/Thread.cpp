@@ -1,6 +1,8 @@
 #include <Thread.h>
 
 #include <devices/Serial.h>
+#include <devices/CPU.h>
+#include <devices/Interrupts.h>
 
 List<Blocker> runnable_threads;
 List<Blocker> dying_threads;
@@ -87,6 +89,7 @@ void Thread::yield(){
 		old_thread->wait_for_cpu();
 
 	current_thread->set_state(ThreadState::Running);
+	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
 	switch_thread(*old_thread, *current_thread);
 }
 
@@ -97,8 +100,15 @@ void Thread::die(){
 	yield();
 }
 
+static void tick_callback(Registers& registers){
+	int ticks = current_thread->get_remaining_ticks();
+	current_thread->set_remaining_ticks(ticks-1);
+}
+
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
 	current_thread = &kernel_thread;
 	current_thread->set_state(ThreadState::Running);
+
+	register_interrupt_callback(tick_callback, 0x20);
 }
