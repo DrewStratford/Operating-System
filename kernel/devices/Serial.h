@@ -8,9 +8,9 @@ class Serial{
 
 public:
 	Serial(int port);
-	int putchar(char);
-	int write(char*, size_t);
-	int write_string(char*);
+	int putchar(const char);
+	int write(const char*, size_t);
+	int write_string(const char*);
 private:
 	int m_port { 0 };
 
@@ -18,3 +18,7 @@ private:
 };
 
 Serial& com1();
+
+Serial& operator<<(Serial& serial, char*);
+Serial& operator<<(Serial& serial, int);
+Serial& operator<<(Serial& serial, void*);
