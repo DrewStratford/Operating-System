@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <devices/Serial.h>
+
 struct [[gnu::packed]] PTE{
 	bool present : 1 { 0 };
 	bool writable : 1 { 0 };
@@ -24,6 +26,18 @@ struct [[gnu::packed]] PTE{
 	}
 };
 
-constexpr uintptr_t present = 0b0001;
-constexpr uintptr_t write = 0b0010;
+enum PageFaultType{
+	KernelReadNP,
+	KernelReadPF,
+	KernelWriteNP,
+	KernelWritePF,
+
+	UserReadNP,
+	UserReadPF,
+	UserWriteNP,
+	UserWritePF
+};
+
+Serial& operator<<(Serial& serial, PageFaultType err_code);
+
 void initialize_paging();

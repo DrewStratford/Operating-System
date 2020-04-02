@@ -31,6 +31,10 @@ void enable_paging(uintptr_t cr3){
 }
 
 static void page_callback(Registers& registers){
+	PageFaultType fault_type = (PageFaultType)registers.err;
+	void* address = 0;
+	asm("mov %%cr2, %[addr]\n" : [addr]"=mr"(address));
+	com1() << "page fault " << fault_type << " @" << address << "\n";
 	panic("page_callback\n");
 }
 
@@ -52,4 +56,13 @@ void initialize_paging(){
 
 	register_interrupt_callback(page_callback, 0x0e);
 	com1() << "finished paging\n";
+}
+
+char* pagefaulttype_strs[] = {
+	"KernelReadNP", "KernelReadPF", "KernelWriteNP", "KernelWritePF",
+	"UserReadNP", "UserReadPF", "UserWriteNP", "UserWritePF"
+};
+Serial& operator<<(Serial& serial, PageFaultType err_code){
+	serial << pagefaulttype_strs[err_code];
+	return serial;
 }
