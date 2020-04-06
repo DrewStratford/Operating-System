@@ -17,6 +17,7 @@ devices/Serial.o \
 devices/CPU.o \
 devices/Interrupts.o \
 memory/Paging.o	\
+memory/Region.o	\
 
 all: os.iso
 

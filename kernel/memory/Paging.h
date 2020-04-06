@@ -41,3 +41,10 @@ enum PageFaultType{
 Serial& operator<<(Serial& serial, PageFaultType err_code);
 
 void initialize_paging();
+
+PTE& lookup_page_table(uintptr_t address);
+PTE& lookup_page_entry(uintptr_t address);
+bool map_kernel_page(uintptr_t address);
+
+void* allocate_physical_page();
+void free_physical_page(void* page);
