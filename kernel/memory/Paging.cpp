@@ -1,5 +1,6 @@
 #include <memory/Paging.h>
 #include <memory/Region.h>
+#include <memory/Heap.h>
 
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
@@ -95,6 +96,7 @@ void initialize_paging(){
 
 	register_interrupt_callback(page_callback, 0x0e);
 	com1() << "finished paging\n";
+	initialize_heap(heap_region.get_start(), heap_region.end());
 }
 
 static char* pagefaulttype_strs[] = {
