@@ -15,6 +15,21 @@ void* kmalloc(size_t size){
 	return out;
 }
 
+void* krealloc(void* ptr, size_t size){
+	if(ptr == nullptr)
+		return kmalloc(size);
+
+	uint8_t* new_ptr = (uint8_t*)kmalloc(size);
+	uint8_t* old_ptr = (uint8_t*)ptr;
+	for(int i = 0; i < size; i++)
+		new_ptr[i] = old_ptr[i];
+	return new_ptr;
+}
+
+void* kreallocarray(void* ptr, size_t members, size_t size){
+	return krealloc(ptr, members * size);
+}
+
 void* kmemalign(size_t alignment, size_t size){
 	uintptr_t offset = water_mark % alignment;
 	water_mark += offset;
