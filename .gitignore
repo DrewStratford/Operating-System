@@ -3,3 +3,5 @@
 *.kernel
 *.iso
 *.a
+*.vfs
+*.initrd

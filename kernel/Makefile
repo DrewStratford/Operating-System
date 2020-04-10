@@ -35,8 +35,12 @@ libc:
 os.kernel: $(OBJS)
 	$(CC) -T linker.ld -o $@ $(CPPFLAGS) $(OBJS)
 
-os.iso: libc os.kernel
+vfs: vfs/*
+	../tools/makevfs vfs/*
+
+os.iso: libc os.kernel vfs
 	cp os.kernel ../bootdir/boot/
+	cp myvfs.vfs ../bootdir/boot/init.initrd
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
 
 run: os.iso
