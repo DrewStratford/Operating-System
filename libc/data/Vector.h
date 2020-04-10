@@ -69,13 +69,13 @@ private:
 	T* m_data { nullptr };
 
 	void remove_impl(size_t index){
-		for(int i = index+1; i < size(); i++)
+		for(size_t i = index+1; i < size(); i++)
 			m_data[i-1] = m_data[i];
 		m_length--;
 	}
 
 	void insert_impl(size_t index){
-		for(int i = size(); i > index; i--){
+		for(size_t i = size(); i > index; i--){
 			m_data[i] = m_data[i-1];
 		}
 		m_length++;
@@ -84,7 +84,6 @@ private:
 	void resize(){
 		if(m_length == m_capacity){
 			m_capacity *= 2;
-			T* old_data = m_data;
 			m_data = (T*)krealloc(m_data, sizeof(T) * m_capacity);
 		}
 	}
