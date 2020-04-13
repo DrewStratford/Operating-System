@@ -68,7 +68,7 @@ Header::Header(std::vector<FileInfo>& files){
   
   for(auto t : files){
     struct HeaderEntry *new_entry = new HeaderEntry();
-    std::memcpy(new_entry->name, t.file_name, std::strlen(t.file_name));
+    std::memcpy(new_entry->name, basename(t.file_name), std::strlen(basename(t.file_name)));
     new_entry->name[FILE_NAME_LIMIT] = '\0';
     new_entry->file_size = t.size;
     new_entry->file_pointer = offset;
