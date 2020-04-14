@@ -55,3 +55,5 @@ private:
 	Vector<DirectoryEntry> m_entries;
 
 };
+
+bool load_init_ramfs(Directory* root_dir, uint32_t* init_root);
