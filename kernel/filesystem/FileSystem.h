@@ -1,6 +1,7 @@
 #pragma once
 
 #include <data/Vector.h>
+#include <devices/Serial.h>
 
 class DirectoryEntry;
 class Inode;
@@ -41,6 +42,8 @@ private:
 
 };
 
+Serial& operator<<(Serial&, File&);
+
 class Directory : public Inode{
 public:
 	Directory();
@@ -50,6 +53,9 @@ public:
 	DirectoryEntry* lookup_entry(char* name);
 	bool create_file(char* name);
 	bool create_subdirectory(char* name);
+	DirectoryEntry* lookup_path(char* path);
+	Directory* lookup_directory(char* path);
+	File* lookup_file(char* path);
 
 private:
 	Vector<DirectoryEntry> m_entries;

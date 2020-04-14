@@ -18,8 +18,9 @@ size_t File::read(char* buffer, size_t offset, size_t amount){
 	if(offset > m_data.size())
 		return 0;
 	
+	size_t end = offset + amount;
 	size_t ret = 0;
-	for(size_t i = offset; i < amount && i < size(); i++, ret++)
+	for(size_t i = offset; i < end && i < size(); i++, ret++)
 		buffer[ret] = m_data[i];
 
 	return ret;
@@ -29,11 +30,23 @@ size_t File::write(char* buffer, size_t offset, size_t amount){
 	if(offset > m_data.size())
 		return 0;
 	
+	size_t end = offset + amount;
 	size_t ret = 0;
-	for(size_t i = offset; i < amount; i++, ret++)
+	for(size_t i = offset; i < end; i++, ret++)
 		m_data.insert(i, buffer[ret]);
 
 	return ret;
+}
+
+Serial& operator<<(Serial& serial, File& file){
+	char buffer[21];
+	for(size_t i = 0; i < file.size();){
+		size_t read = file.read(buffer, i, 20);
+		i+= read;
+		buffer[read] = '\0';
+		serial << buffer;
+	}
+	return serial;
 }
 
 Directory::Directory(){
@@ -65,6 +78,54 @@ bool Directory::create_subdirectory(char* name){
 	directory->add_entry("..", this);
 	add_entry(name, directory);
 	return true;
+}
+
+
+DirectoryEntry* Directory::lookup_path(char* path){
+	Vector<char*> segments;
+	Vector<size_t> segment_lengths;
+
+	size_t idx = 0;
+	char* c = path;
+	size_t size = 0;
+	for(; idx < strlen(path); idx++){
+		if(path[idx] == '/'){
+			segments.insert_end(c);
+			segment_lengths.insert_end(size);
+			c = &path[idx+1];
+			size = 0;
+			continue;
+		}
+		size++;
+	}
+
+	segments.insert_end(c);
+	segment_lengths.insert_end(size);
+
+	char file_name[50];
+	Directory* directory = this;
+	DirectoryEntry* dir_ent = nullptr;
+
+	for(int i = 0; i < segments.size() && directory != nullptr; i++){
+		size_t len = segment_lengths[i];
+		memcpy(file_name, segments[i], len);
+		file_name[len] = '\0';
+		dir_ent = directory->lookup_entry(file_name);
+		if(!dir_ent)
+			return nullptr;
+		directory = dir_ent->get_inode()->as_directory();
+	}
+	return dir_ent;
+}
+
+File* Directory::lookup_file(char* path){
+	DirectoryEntry* de = lookup_path(path);
+	return de ? de->get_inode()->as_file() : nullptr;
+}
+
+Directory* Directory::lookup_directory(char* path){
+	DirectoryEntry* de = lookup_path(path);
+	return de ? de->get_inode()->as_directory() : nullptr;
 }
 
 
