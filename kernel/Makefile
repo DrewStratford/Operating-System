@@ -50,8 +50,9 @@ debug: os.iso
 	qemu-system-i386 -s -S -serial stdio $<
 
 clean:
-	rm -f *.o
-	rm -f devices/*.o
+	rm -f $(OBJS)
+	#rm -f *.o
+	#rm -f devices/*.o
 	rm -f os.kernel
 	rm -f os.iso
 	rm -f ../bootdir/boot/os.kernel
