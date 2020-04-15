@@ -2,6 +2,8 @@
 #include <memory/Region.h>
 #include <memory/Heap.h>
 
+#include <string.h>
+
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
 #include <devices/Serial.h>
@@ -18,6 +20,13 @@ Region rodata_region("k_rodata", (uintptr_t)&kernel_rodata, (uintptr_t)&kernel_r
 Region data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_end - (uintptr_t)&kernel_data);
 Region bss_region("k_bss", (uintptr_t)&kernel_bss, (uintptr_t)&kernel_bss_end - (uintptr_t)&kernel_bss);
 Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x80000000);
+
+static void create_page_table(uintptr_t address);
+
+
+uintptr_t kernel_cr3(){
+	return v_to_p((uintptr_t)init_page_directory);
+}
 
 void load_cr3(uintptr_t cr3){
 	asm("mov %[cr3], %%cr3\n"
@@ -94,6 +103,12 @@ void initialize_paging(){
 
 	enable_paging(reinterpret_cast<uintptr_t>(init_page_directory));
 
+	// Map in the first 1 GiB of page tables for use by the kernel.
+	// We do this now to ensure that kerenel page entries stay consistent
+	// across all processes.
+	for(size_t i = 1; i < 256; i++)
+		create_page_table(i * 1024 * 0x1000);
+
 	register_interrupt_callback(page_callback, 0x0e);
 	com1() << "finished paging\n";
 	initialize_heap(heap_region.get_start(), heap_region.end());
@@ -169,6 +184,20 @@ bool map_kernel_page(uintptr_t address){
 	entry.present = true;
 	com1() << "mapped: " << (void*)address << " -> " << (void*)entry_physical << "\n";
 	return true;
+}
+
+void initialize_page_directory(PTE* directory){
+	PTE* old_directory = get_recursive_directory();
+	memset(directory, 0, 0x1000);
+
+	//copy over the kernel page tables, which are consistent across all processes
+	for(size_t i = 0; i < 256; i++)
+		directory[i] = old_directory[i];
+
+	PTE& recursive_mapping = directory[1023];
+	recursive_mapping.set_address(reinterpret_cast<uintptr_t>(v_to_p((uintptr_t)directory)));
+	recursive_mapping.writable = true;
+	recursive_mapping.present = true;
 }
 
 // For the mean time, we just use a watermark allocator.
