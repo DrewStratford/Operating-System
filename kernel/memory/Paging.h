@@ -44,6 +44,7 @@ void initialize_paging();
 
 PTE& lookup_page_table(uintptr_t address);
 PTE& lookup_page_entry(uintptr_t address);
+uintptr_t v_to_p(uintptr_t address);
 bool map_kernel_page(uintptr_t address);
 
 void* allocate_physical_page();

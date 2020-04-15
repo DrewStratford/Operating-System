@@ -131,6 +131,12 @@ PTE& lookup_page_entry(uintptr_t address){
 	return page_table[entry_index];
 }
 
+uintptr_t v_to_p(uintptr_t address){
+	if(!get_recursive_table(address))
+		return (uintptr_t) nullptr;
+	return lookup_page_entry(address).get_address();
+}
+
 static void create_page_table(uintptr_t address){
 	uintptr_t table_physical = (uintptr_t)allocate_physical_page();
 	PTE& entry = lookup_page_table(address);
