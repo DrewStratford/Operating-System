@@ -31,7 +31,7 @@ void* kreallocarray(void* ptr, size_t members, size_t size){
 }
 
 void* kmemalign(size_t alignment, size_t size){
-	uintptr_t offset = water_mark % alignment;
+	uintptr_t offset = alignment - (water_mark % alignment);
 	water_mark += offset;
 	return kmalloc(size);
 }
