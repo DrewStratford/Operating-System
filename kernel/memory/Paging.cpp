@@ -24,8 +24,8 @@ Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x80000000);
 static void create_page_table(uintptr_t address);
 
 
-uintptr_t kernel_cr3(){
-	return v_to_p((uintptr_t)init_page_directory);
+PTE* kernel_page_directory(){
+	return init_page_directory;
 }
 
 void load_cr3(uintptr_t cr3){

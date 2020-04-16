@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include <memory/Paging.h>
 #include <data/List.h>
 
 enum ThreadState
@@ -40,10 +41,15 @@ public:
 	void set_remaining_ticks(int ticks) { remaining_ticks = ticks; };
 	int get_remaining_ticks() { return remaining_ticks; };
 
+	PTE* get_pdir() { return pdir; };
+	void set_pdir(PTE* new_pdir) { pdir = new_pdir; };
+
 private:
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };
 	ThreadState state;
+
+	PTE* pdir = nullptr;
 
 	int default_ticks { 5 };
 	int remaining_ticks { 0 };

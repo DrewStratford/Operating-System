@@ -43,7 +43,7 @@ Serial& operator<<(Serial& serial, PageFaultType err_code);
 void initialize_paging();
 void load_cr3(uintptr_t cr3);
 
-uintptr_t kernel_cr3();
+PTE* kernel_page_directory();
 
 PTE& lookup_page_table(uintptr_t address);
 PTE& lookup_page_entry(uintptr_t address);

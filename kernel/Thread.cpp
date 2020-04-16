@@ -42,6 +42,8 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 	push_on_stack<uintptr_t>(start);
 	push_on_stack<Blocker>(Blocker(this));
 
+	set_pdir(kernel_page_directory());
+
 	Blocker* blocker = (Blocker*)stack_ptr;
 	resume_ptr = (uintptr_t)kernel_thread_trampoline;
 
@@ -90,6 +92,11 @@ void Thread::yield(){
 
 	current_thread->set_state(ThreadState::Running);
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
+
+	//swap into the new threads page directory
+	uintptr_t new_cr3 = v_to_p((uintptr_t)current_thread->get_pdir());
+	load_cr3(new_cr3);
+
 	switch_thread(*old_thread, *current_thread);
 }
 
@@ -110,6 +117,7 @@ void Thread::initialize(){
 	current_thread = &kernel_thread;
 	current_thread->set_state(ThreadState::Running);
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
+	current_thread->set_pdir(kernel_page_directory());
 
 	register_interrupt_callback(tick_callback, 0x20);
 }
