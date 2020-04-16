@@ -52,8 +52,7 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 }
 
 
-void Thread::wait_for_cpu(){
-	Blocker cpu_blocker(this);
+void Thread::wait_for_cpu(Blocker& cpu_blocker){
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert_end(&cpu_blocker);
 }
@@ -87,8 +86,9 @@ void Thread::yield(){
 	if(current_thread == old_thread)
 		return;
 
+	Blocker cpu_blocker(old_thread);
 	if(old_thread->get_state() == ThreadState::Running)
-		old_thread->wait_for_cpu();
+		old_thread->wait_for_cpu(cpu_blocker);
 
 	current_thread->set_state(ThreadState::Running);
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());

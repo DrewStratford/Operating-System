@@ -30,7 +30,6 @@ public:
 	static void die();
 	static void initialize();
 
-	void wait_for_cpu();
 	void wait_on_list(List<Blocker>&);
 	static void wake_from_list(List<Blocker>&);
 	ThreadState get_state() const { return state; };
@@ -53,6 +52,8 @@ private:
 
 	int default_ticks { 5 };
 	int remaining_ticks { 0 };
+
+	void wait_for_cpu(Blocker&);
 };
 
 enum BlockerStatus
