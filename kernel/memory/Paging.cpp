@@ -19,7 +19,7 @@ Region text_region("k_text", (uintptr_t)&kernel_text, (uintptr_t)&kernel_text_en
 Region rodata_region("k_rodata", (uintptr_t)&kernel_rodata, (uintptr_t)&kernel_rodata_end - (uintptr_t)&kernel_rodata);
 Region data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_end - (uintptr_t)&kernel_data);
 Region bss_region("k_bss", (uintptr_t)&kernel_bss, (uintptr_t)&kernel_bss_end - (uintptr_t)&kernel_bss);
-Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x80000000);
+Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x40000000-(uintptr_t)&kernel_end);
 
 static void create_page_table(uintptr_t address);
 
