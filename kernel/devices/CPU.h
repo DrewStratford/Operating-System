@@ -116,6 +116,8 @@ extern "C" uint32_t get_eflags();
 void sti();
 void cli();
 
+TSS& get_tss();
+
 class NoInterrupts{
 public:
 	NoInterrupts();
