@@ -1,4 +1,5 @@
 #include <icxxabi.h>
+#include <devices/CPU.h>
  
 	#ifdef __cplusplus
 	extern "C" {
@@ -97,7 +98,9 @@ void __cxa_finalize(void *f)
 		};
 	};
 };
- 
+
+extern "C" void __cxa_pure_virtual() { panic("error: pure virtual\n");;}
+
 	#ifdef __cplusplus
 	};
 	#endif
