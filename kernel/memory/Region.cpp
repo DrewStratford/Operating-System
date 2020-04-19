@@ -23,7 +23,7 @@ void Region::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	switch(fault_type){
 		case KernelWriteNP:
 		case KernelReadNP:
-			map_kernel_page((uintptr_t)addr);
+			map_page((uintptr_t)addr, false);
 			break;
 		case UserWriteNP:
 		case UserReadNP:

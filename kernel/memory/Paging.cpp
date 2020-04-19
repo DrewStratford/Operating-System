@@ -23,7 +23,7 @@ Region data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_en
 Region bss_region("k_bss", (uintptr_t)&kernel_bss, (uintptr_t)&kernel_bss_end - (uintptr_t)&kernel_bss);
 Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x40000000-(uintptr_t)&kernel_end);
 
-static void create_page_table(uintptr_t address);
+static void create_page_table(uintptr_t address, bool is_userspace);
 
 
 PTE* kernel_page_directory(){
@@ -128,7 +128,7 @@ void initialize_paging(){
 	// We do this now to ensure that kerenel page entries stay consistent
 	// across all processes.
 	for(size_t i = 1; i < 256; i++)
-		create_page_table(i * 1024 * 0x1000);
+		create_page_table(i * 1024 * 0x1000, false);
 
 	register_interrupt_callback(page_callback, 0x0e);
 	com1() << "finished paging\n";
@@ -173,12 +173,12 @@ uintptr_t v_to_p(uintptr_t address){
 	return lookup_page_entry(address).get_address();
 }
 
-static void create_page_table(uintptr_t address){
+static void create_page_table(uintptr_t address, bool is_userspace){
 	uintptr_t table_physical = (uintptr_t)allocate_physical_page();
 	PTE& entry = lookup_page_table(address);
 
 	entry.set_address(table_physical);
-	entry.userspace = true;
+	entry.userspace = is_userspace;
 	entry.writable = true;
 	entry.present = true;
 
@@ -189,11 +189,11 @@ static void create_page_table(uintptr_t address){
 }
 
 // Maps a virtual address to a physical page.
-bool map_kernel_page(uintptr_t address){
+bool map_page(uintptr_t address, bool is_userspace){
 	PTE& table = lookup_page_table(address);
 
 	if(!table.present)
-		create_page_table(address);
+		create_page_table(address, is_userspace);
 
 	PTE& entry = lookup_page_entry(address);
 
@@ -202,7 +202,7 @@ bool map_kernel_page(uintptr_t address){
 
 	uintptr_t entry_physical = (uintptr_t)allocate_physical_page();
 	entry.set_address(entry_physical);
-	entry.userspace = true;
+	entry.userspace = is_userspace;
 	entry.writable = true;
 	entry.present = true;
 	com1() << "mapped: " << (void*)address << " -> " << (void*)entry_physical << "\n";
