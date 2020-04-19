@@ -2,7 +2,9 @@
 
 #include <stdint.h>
 
+#include <filesystem/FileSystem.h>
 #include <memory/Paging.h>
+#include <memory/Region.h>
 #include <data/List.h>
 
 enum ThreadState
@@ -18,6 +20,7 @@ class Thread : public ListNode<Thread>{
 public:
 	Thread();
 	Thread(uintptr_t stack, uintptr_t resume);
+	Thread(File*);
 
 	template <typename T>
 	void push_on_stack(T t){
@@ -29,6 +32,7 @@ public:
 	static void yield();
 	static void die();
 	static void initialize();
+	static Thread* get_current();
 
 	void wait_on_list(List<Blocker>&);
 	static void wake_from_list(List<Blocker>&);
@@ -43,7 +47,10 @@ public:
 	PTE* get_pdir() { return pdir; };
 	void set_pdir(PTE* new_pdir) { pdir = new_pdir; };
 
+	List<Region> m_user_regions;
+
 private:
+	uintptr_t stack_top { 0 };
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };
 	ThreadState state;

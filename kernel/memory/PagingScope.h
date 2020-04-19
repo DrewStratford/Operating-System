@@ -8,4 +8,5 @@ public:
 	~PagingScope();
 private:
 	PTE* old_pdir { nullptr };
+	List<Region>* regions { nullptr };
 };

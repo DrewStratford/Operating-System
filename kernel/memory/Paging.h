@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <devices/Serial.h>
+#include <data/List.h>
 
 struct [[gnu::packed]] PTE{
 	bool present : 1 { 0 };
@@ -38,10 +39,16 @@ enum PageFaultType{
 	UserWritePF
 };
 
+//#include <memory/Region.h>
+class Region;
+
 Serial& operator<<(Serial& serial, PageFaultType err_code);
 
 void initialize_paging();
 void load_cr3(uintptr_t cr3);
+
+List<Region>* get_user_regions();
+void set_user_regions(List<Region>* regions);
 
 PTE* kernel_page_directory();
 

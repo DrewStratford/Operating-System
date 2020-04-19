@@ -4,6 +4,7 @@
 
 #include <string.h>
 
+#include <Thread.h>
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
 #include <devices/Serial.h>
@@ -12,6 +13,7 @@ alignas(0x1000) PTE init_page_directory[1024];
 alignas(0x1000) PTE init_page_table[1024];
 
 List<Region> kernel_regions;
+List<Region>* user_regions = nullptr;
 
 extern uintptr_t kernel_text_end, kernel_text, kernel_rodata, kernel_rodata_end, kernel_data, kernel_data_end, kernel_bss, kernel_bss_end, kernel_end;
 
@@ -26,6 +28,14 @@ static void create_page_table(uintptr_t address);
 
 PTE* kernel_page_directory(){
 	return init_page_directory;
+}
+
+List<Region>* get_user_regions(){
+	return user_regions;
+}
+
+void set_user_regions(List<Region>* regions){
+	user_regions = regions;
 }
 
 void load_cr3(uintptr_t cr3){
@@ -68,7 +78,15 @@ static void page_callback(Registers& registers){
 			return;
 		}
 	}
-	panic("page_callback\n");
+
+	Region* r = user_regions ? user_regions->peek() : nullptr;
+	for (Region* region = r; region != nullptr; region = region->next){
+		if(region->contains(address)){
+			region->handle_page_fault(fault_type, address);
+			return;
+		}
+	}
+	panic("page_callback: page fault out of region\n");
 }
 
 void initialize_paging(){
@@ -85,6 +103,7 @@ void initialize_paging(){
 	for(int i = 0; i < 1024; i++){
 		PTE& pte = init_page_table[i];
 		pte.set_address(i * 0x1000);
+		pte.userspace = true;
 		pte.writable = true;
 		pte.present = true;
 	}
@@ -92,12 +111,14 @@ void initialize_paging(){
 	// Setup first page table
 	PTE& page_directory = init_page_directory[0];
 	page_directory.set_address(reinterpret_cast<uintptr_t>(init_page_table));
+	page_directory.userspace = true;
 	page_directory.writable = true;
 	page_directory.present = true;
 
 	// Setup last table as a recursive mapping
 	PTE& recursive_mapping = init_page_directory[1023];
 	recursive_mapping.set_address(reinterpret_cast<uintptr_t>(init_page_directory));
+	recursive_mapping.userspace = true;
 	recursive_mapping.writable = true;
 	recursive_mapping.present = true;
 
@@ -157,6 +178,7 @@ static void create_page_table(uintptr_t address){
 	PTE& entry = lookup_page_table(address);
 
 	entry.set_address(table_physical);
+	entry.userspace = true;
 	entry.writable = true;
 	entry.present = true;
 
@@ -180,6 +202,7 @@ bool map_kernel_page(uintptr_t address){
 
 	uintptr_t entry_physical = (uintptr_t)allocate_physical_page();
 	entry.set_address(entry_physical);
+	entry.userspace = true;
 	entry.writable = true;
 	entry.present = true;
 	com1() << "mapped: " << (void*)address << " -> " << (void*)entry_physical << "\n";
@@ -196,6 +219,7 @@ void initialize_page_directory(PTE* directory){
 
 	PTE& recursive_mapping = directory[1023];
 	recursive_mapping.set_address(reinterpret_cast<uintptr_t>(v_to_p((uintptr_t)directory)));
+	recursive_mapping.userspace = true;
 	recursive_mapping.writable = true;
 	recursive_mapping.present = true;
 }
