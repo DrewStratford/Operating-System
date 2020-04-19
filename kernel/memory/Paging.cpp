@@ -17,11 +17,11 @@ List<Region>* user_regions = nullptr;
 
 extern uintptr_t kernel_text_end, kernel_text, kernel_rodata, kernel_rodata_end, kernel_data, kernel_data_end, kernel_bss, kernel_bss_end, kernel_end;
 
-Region text_region("k_text", (uintptr_t)&kernel_text, (uintptr_t)&kernel_text_end - (uintptr_t)&kernel_text);
-Region rodata_region("k_rodata", (uintptr_t)&kernel_rodata, (uintptr_t)&kernel_rodata_end - (uintptr_t)&kernel_rodata);
-Region data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_end - (uintptr_t)&kernel_data);
-Region bss_region("k_bss", (uintptr_t)&kernel_bss, (uintptr_t)&kernel_bss_end - (uintptr_t)&kernel_bss);
-Region heap_region("k_heap", (uintptr_t)&kernel_end, 0x40000000-(uintptr_t)&kernel_end);
+KernelRegion text_region("k_text", (uintptr_t)&kernel_text, (uintptr_t)&kernel_text_end - (uintptr_t)&kernel_text);
+KernelRegion rodata_region("k_rodata", (uintptr_t)&kernel_rodata, (uintptr_t)&kernel_rodata_end - (uintptr_t)&kernel_rodata);
+KernelRegion data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_end - (uintptr_t)&kernel_data);
+KernelRegion bss_region("k_bss", (uintptr_t)&kernel_bss, (uintptr_t)&kernel_bss_end - (uintptr_t)&kernel_bss);
+KernelRegion heap_region("k_heap", (uintptr_t)&kernel_end, 0x40000000-(uintptr_t)&kernel_end);
 
 static void create_page_table(uintptr_t address, bool is_userspace);
 

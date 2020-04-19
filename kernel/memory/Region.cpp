@@ -6,7 +6,21 @@
 Region::Region(char* description, uint32_t start, uint32_t size) 
 	: description(description), start(start), size(size){
 }
-Region::Region(uint32_t start, uint32_t size) : start(start), size(size){
+
+UserRegion::UserRegion(char* description, uint32_t start, uint32_t size)
+	: Region(description, start, size) {
+}
+
+UserRegion::UserRegion(uint32_t start, uint32_t size)
+	: Region("anonymous", start, size) {
+}
+
+KernelRegion::KernelRegion(char* description, uint32_t start, uint32_t size)
+	: Region(description, start, size) {
+}
+
+KernelRegion::KernelRegion(uint32_t start, uint32_t size)
+	: Region("anonymous", start, size) {
 }
 
 const uint32_t Region::end() const {
@@ -17,8 +31,24 @@ bool Region::contains(uintptr_t addr){
 	return addr >= start && addr < end();
 }
 
-void Region::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
-	com1() << *this << " handling fault " << (void*)addr << "\n";
+void UserRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
+	com1() << *this << " handling UserRegion fault " << (void*)addr << "\n";
+
+	switch(fault_type){
+		case KernelWriteNP:
+		case KernelReadNP:
+		case UserWriteNP:
+		case UserReadNP:
+			map_page((uintptr_t)addr, true);
+			break;
+		default:
+			panic("paging: protection fault\n");
+			break;
+	}
+}
+
+void KernelRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
+	com1() << *this << " handling KernelRegion fault " << (void*)addr << "\n";
 
 	switch(fault_type){
 		case KernelWriteNP:
@@ -38,4 +68,5 @@ void Region::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 Serial& operator<<(Serial& serial, Region const& reg){
 	serial << "Region: " << reg.get_description() << ", start: " 
 			<< (void*)reg.get_start() << ", end: " << (void*)reg.end();
+	return serial;
 }

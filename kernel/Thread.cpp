@@ -79,8 +79,8 @@ Thread::Thread(File* executable){
 	uintptr_t u_stack_bottom = u_stack_top - 0xf000;
 	uintptr_t exec_start = 0x40000000;
 	uintptr_t exec_end = executable->size();
-	Region* exec_region = new Region("executable", exec_start, exec_end);
-	Region* stack_region = new Region("user_stack", u_stack_bottom, u_stack_top);
+	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_end);
+	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_top);
 
 	m_user_regions.insert(exec_region);
 	m_user_regions.insert(stack_region);
