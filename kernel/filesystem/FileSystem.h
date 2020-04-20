@@ -62,4 +62,5 @@ private:
 
 };
 
-bool load_init_ramfs(Directory* root_dir, uint32_t* init_root);
+Directory& root_directory();
+bool initialize_file_system(uint32_t* initfs);

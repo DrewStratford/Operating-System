@@ -1,6 +1,16 @@
 #include <filesystem/FileSystem.h>
 
+#include <devices/CPU.h>
+
 #include <string.h>
+
+Directory* root_dir = nullptr;
+
+Directory& root_directory(){
+	if(!root_dir)
+		panic("calling root_directory() without initializing file system\n");
+	return *root_dir;
+}
 
 DirectoryEntry::DirectoryEntry(char* name, Inode* inode)
 	: m_name(name), m_inode(inode){
@@ -155,4 +165,9 @@ bool load_init_ramfs(Directory* root_dir, uint32_t* init){
 		return true;
 	}
 	return false;
+}
+
+bool initialize_file_system(uint32_t* initfs){
+	root_dir = new Directory();
+	load_init_ramfs(root_dir, initfs);
 }
