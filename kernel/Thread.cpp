@@ -75,12 +75,13 @@ Thread::Thread(File* executable){
 	initialize_page_directory(page_dir);
 	set_pdir(page_dir);
 
+	uintptr_t u_stack_size = 0xf000;
 	uintptr_t u_stack_top = 0xFF000000;
-	uintptr_t u_stack_bottom = u_stack_top - 0xf000;
+	uintptr_t u_stack_bottom = u_stack_top - u_stack_size;
 	uintptr_t exec_start = 0x40000000;
-	uintptr_t exec_end = executable->size();
-	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_end);
-	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_top);
+	uintptr_t exec_size = executable->size();
+	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
+	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
 
 	m_user_regions.insert(exec_region);
 	m_user_regions.insert(stack_region);
@@ -104,7 +105,7 @@ Thread::Thread(File* executable){
 	regs.fs = 0x23;
 
 	regs.ebp = 0; //??
-	regs.esp = (uint32_t)u_stack_top;
+	regs.esp = (uint32_t)u_stack_top - 16;
 	regs.eip = exec_start;
 	regs.flags |= 0x200; // enable interrupts
 
