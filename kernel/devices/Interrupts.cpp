@@ -158,7 +158,7 @@ void initialize_interrupts(){
 	for(size_t i = 0; i < 256; i++)
 		system_calls[i] = nullptr;
 
-	system_calls[0] = syscall_debug;
+	register_system_call(syscall_debug, 0);
 	
 	// remap the PIC
 	IO::out8(0x20, 0x11); //restart both PICs
@@ -185,11 +185,15 @@ void initialize_interrupts(){
 }
 
 void register_interrupt_callback(InterruptCallback callback, size_t no){
-	callbacks[no] = callback;
+	callbacks[no % 256] = callback;
+}
+
+void register_system_call(SystemCall syscall, size_t no){
+	system_calls[no % 256] = syscall;
 }
 
 extern "C" void interrupt_handler(Registers registers){
-	InterruptCallback handler = callbacks[registers.intr];
+	InterruptCallback handler = callbacks[registers.intr % 256];
 
 	if(handler)
 		handler(registers);
