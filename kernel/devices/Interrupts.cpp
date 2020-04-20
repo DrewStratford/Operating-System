@@ -7,8 +7,16 @@ IDTEntry idt_table[256];
 IDTR idtr(0,0);
 
 InterruptCallback callbacks[256];
+SystemCall system_calls[256];
 
 extern "C" void interrupt_handler(Registers registers);
+void system_call_handler(Registers& registers);
+
+int syscall_debug(Registers& registers){
+	char** stack = (char**)registers.esp;
+	char* message = stack[0];
+	com1() << message << "\n";
+}
 
 #define INTERRUPT_ERRCODE(name, code)	\
 extern "C" void name##_interrupt_entry();	\
@@ -91,6 +99,8 @@ INTERRUPT(irq2d, 0x2d);
 INTERRUPT(irq2e, 0x2e);
 INTERRUPT(irq2f, 0x2f);
 
+INTERRUPT(irq80, 0x80);
+
 void initialize_interrupts(){
 	com1().write_string("initializing IDT...\n");
 
@@ -140,6 +150,15 @@ void initialize_interrupts(){
 	idt_table[0x2d] = IDTEntry((uint32_t)irq2d_interrupt_entry, 0x8E);
 	idt_table[0x2e] = IDTEntry((uint32_t)irq2e_interrupt_entry, 0x8E);
 	idt_table[0x2f] = IDTEntry((uint32_t)irq2f_interrupt_entry, 0x8E);
+
+	// map 0x80 for userspace interrupts
+	idt_table[0x80] = IDTEntry((uint32_t)irq80_interrupt_entry, 0x8E);
+	callbacks[0x80] = system_call_handler;
+
+	for(size_t i = 0; i < 256; i++)
+		system_calls[i] = nullptr;
+
+	system_calls[0] = syscall_debug;
 	
 	// remap the PIC
 	IO::out8(0x20, 0x11); //restart both PICs
@@ -180,4 +199,11 @@ extern "C" void interrupt_handler(Registers registers){
 
 	if(current_thread->get_remaining_ticks() <= 0)
 		Thread::yield();
+}
+
+void system_call_handler(Registers& registers){
+	SystemCall system_call = system_calls[registers.eax % 256];
+
+	if(system_call)
+		system_call(registers);
 }
