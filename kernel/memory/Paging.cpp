@@ -161,7 +161,7 @@ PTE& lookup_page_table(uintptr_t address){
 }
 
 PTE& lookup_page_entry(uintptr_t address){
-	uintptr_t entry_index = (address >> 12) & 0xfff;
+	uintptr_t entry_index = (address >> 12) & 0x3ff;
 
 	PTE* page_table = get_recursive_table(address);
 	return page_table[entry_index];
