@@ -209,5 +209,5 @@ void system_call_handler(Registers& registers){
 	SystemCall system_call = system_calls[registers.eax % 256];
 
 	if(system_call)
-		system_call(registers);
+		registers.eax = system_call(registers);
 }
