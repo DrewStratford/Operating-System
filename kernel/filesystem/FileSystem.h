@@ -31,15 +31,21 @@ private:
 
 class File : public Inode{
 public:
-	virtual File* as_file() { return this;} ;
+	File* as_file() { return this; };
 
-	size_t size();
-	size_t write(char*, size_t offset, size_t amount);
-	size_t read(char*, size_t offset, size_t amount);
+	virtual size_t size() = 0;
+	virtual size_t write(char*, size_t offset, size_t amount) = 0;
+	virtual size_t read(char*, size_t offset, size_t amount) = 0;
+};
+
+class VFile : public File{
+public:
+	size_t size() override;
+	size_t write(char*, size_t offset, size_t amount) override;
+	size_t read(char*, size_t offset, size_t amount) override;
 
 private:
 	Vector<char> m_data;
-
 };
 
 Serial& operator<<(Serial&, File&);

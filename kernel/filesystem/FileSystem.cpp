@@ -20,11 +20,11 @@ bool DirectoryEntry::is_named(char* name){
 	return strcmp(m_name, name) == 0;
 }
 
-size_t File::size(){
+size_t VFile::size(){
 	return m_data.size();
 }
 
-size_t File::read(char* buffer, size_t offset, size_t amount){
+size_t VFile::read(char* buffer, size_t offset, size_t amount){
 	if(offset > m_data.size())
 		return 0;
 	
@@ -36,7 +36,7 @@ size_t File::read(char* buffer, size_t offset, size_t amount){
 	return ret;
 }
 
-size_t File::write(char* buffer, size_t offset, size_t amount){
+size_t VFile::write(char* buffer, size_t offset, size_t amount){
 	if(offset > m_data.size())
 		return 0;
 	
@@ -78,7 +78,7 @@ DirectoryEntry* Directory::lookup_entry(char* name){
 }
 
 bool Directory::create_file(char* name){
-	File* file = new File();
+	VFile* file = new VFile();
 	add_entry(name, file);
 	return true;
 }
@@ -156,7 +156,7 @@ bool load_init_ramfs(Directory* root_dir, uint32_t* init){
 	root_dir->create_subdirectory("vfs");
 	if(Directory* dir = root_dir->lookup_entry("vfs")->get_inode()->as_directory()){
 		for(int i = 0; i < file_count; i++){
-			File* file = new File();
+			VFile* file = new VFile();
 			char* file_mem = (char*)init + (size_t)headers->file_pointer;
 			file->write(file_mem, 0, headers->file_size);
 			dir->add_entry(headers->name, file);
