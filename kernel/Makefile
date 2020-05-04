@@ -45,7 +45,7 @@ os.iso: libc os.kernel vfs
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
 
 run: os.iso
-	qemu-system-i386 -serial stdio $<
+	qemu-system-i386 -enable-kvm -serial stdio $<
 
 debug: os.iso
 	qemu-system-i386 -s -S -serial stdio $<
