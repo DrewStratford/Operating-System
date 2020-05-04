@@ -52,6 +52,7 @@ extern "C" void user_thread_trampoline(void);
 Thread::Thread() {}
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
+	NoInterrupts i;
 	stack_top = stack;
 	stack_ptr = stack;
 	push_on_stack<uintptr_t>(start);
@@ -67,6 +68,7 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 }
 
 Thread::Thread(File* executable){
+	NoInterrupts d;
 	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0x1000;
 	stack_ptr = stack_top;
 	resume_ptr = (uintptr_t)user_thread_trampoline;
@@ -183,6 +185,23 @@ static void tick_callback(Registers& registers){
 	current_thread->set_remaining_ticks(ticks-1);
 }
 
+static int32_t syscall_create_thread(Registers& registers){
+	char** stack = (char**)registers.esp;
+	char* filepath = stack[0];
+
+	if(File* f = root_directory().lookup_file(filepath)){
+		Thread *t = new Thread(f);
+		//TODO: should return new thread id
+		return 0;
+	}
+	return -1;
+}
+
+static int32_t syscall_exit_thread(Registers& registers){
+	current_thread->die();
+	return -1;
+}
+
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
 	current_thread = &kernel_thread;
@@ -190,5 +209,7 @@ void Thread::initialize(){
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
 	current_thread->set_pdir(kernel_page_directory());
 
+	register_system_call(syscall_create_thread, 1);
+	register_system_call(syscall_exit_thread, 2);
 	register_interrupt_callback(tick_callback, 0x20);
 }

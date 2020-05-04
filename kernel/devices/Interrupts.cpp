@@ -12,10 +12,11 @@ SystemCall system_calls[256];
 extern "C" void interrupt_handler(Registers registers);
 void system_call_handler(Registers& registers);
 
-int syscall_debug(Registers& registers){
+int32_t syscall_debug(Registers& registers){
 	char** stack = (char**)registers.esp;
 	char* message = stack[0];
 	com1() << message << "\n";
+	return 0;
 }
 
 #define INTERRUPT_ERRCODE(name, code)	\

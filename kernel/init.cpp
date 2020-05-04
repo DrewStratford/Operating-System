@@ -24,11 +24,11 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	initialize_file_system(file_header);
 
-	Thread userspace_thread(root_directory().lookup_file("vfs/test.prog"));
-	Thread userspace2(root_directory().lookup_file("vfs/test.prog"));
+	Thread userspace_thread(root_directory().lookup_file("vfs/init.prog"));
 	
 	sti();
 	while(true){
+		com1() << "kernel\n";
 		asm("hlt");
 	}
 	return 0;
