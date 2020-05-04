@@ -17,6 +17,7 @@ List<Region>* user_regions = nullptr;
 
 extern uintptr_t kernel_text_end, kernel_text, kernel_rodata, kernel_rodata_end, kernel_data, kernel_data_end, kernel_bss, kernel_bss_end, kernel_end;
 
+GuardRegion null_region((uintptr_t)0, (uintptr_t)0x1000);
 KernelRegion text_region("k_text", (uintptr_t)&kernel_text, (uintptr_t)&kernel_text_end - (uintptr_t)&kernel_text);
 KernelRegion rodata_region("k_rodata", (uintptr_t)&kernel_rodata, (uintptr_t)&kernel_rodata_end - (uintptr_t)&kernel_rodata);
 KernelRegion data_region("k_data", (uintptr_t)&kernel_data, (uintptr_t)&kernel_data_end - (uintptr_t)&kernel_data);
@@ -90,6 +91,7 @@ static void page_callback(Registers& registers){
 }
 
 void initialize_paging(){
+	kernel_regions.insert(&null_region);
 	kernel_regions.insert(&text_region);
 	kernel_regions.insert(&rodata_region);
 	kernel_regions.insert(&data_region);
@@ -100,7 +102,8 @@ void initialize_paging(){
 		com1() << *region << "\n";
 	}
 
-	for(int i = 0; i < 1024; i++){
+	//Note: we miss the first page as it is the NULL page.
+	for(int i = 1; i < 1024; i++){
 		PTE& pte = init_page_table[i];
 		pte.set_address(i * 0x1000);
 		pte.userspace = true;

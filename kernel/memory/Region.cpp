@@ -65,6 +65,14 @@ void KernelRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	}
 }
 
+GuardRegion::GuardRegion(uintptr_t start, uintptr_t end)
+	: Region("GuardRegion", start, end) { }
+
+void GuardRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
+	com1() << "fault in GuardRegion: " << (void*)addr << "\n";
+	panic("");
+}
+
 Serial& operator<<(Serial& serial, Region const& reg){
 	serial << "Region: " << reg.get_description() << ", start: " 
 			<< (void*)reg.get_start() << ", end: " << (void*)reg.end();

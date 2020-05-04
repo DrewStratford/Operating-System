@@ -37,4 +37,10 @@ public:
 	virtual void handle_page_fault(PageFaultType, uintptr_t addr);
 };
 
+class GuardRegion : public Region {
+public:
+	GuardRegion(uintptr_t start, uintptr_t end);
+	virtual void handle_page_fault(PageFaultType, uintptr_t addr);
+};
+
 Serial& operator<<(Serial& serial, Region const& region);
