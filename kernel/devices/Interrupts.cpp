@@ -182,7 +182,11 @@ void initialize_interrupts(){
 
 	//start the pit
 	IO::out8(0x43, 0b00110100);
-	IO::out8(0x40, 0);
+
+	//This timing is pretty arbitrary, it's only set
+	// to be fast enough that the keyboard isn't laggy.
+	IO::out8(0x40, 250);
+	IO::out8(0x40, 10);
 }
 
 void register_interrupt_callback(InterruptCallback callback, size_t no){

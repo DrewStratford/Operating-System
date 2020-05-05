@@ -140,7 +140,7 @@ void Thread::wake_from_list(List<Blocker> &list){
 
 	Blocker *blocker = list.pop();
 	blocker->get_thread()->set_state(ThreadState::Runnable);
-	runnable_threads.insert_end(blocker);
+	runnable_threads.insert(blocker);
 }
 
 void Thread::yield(){
