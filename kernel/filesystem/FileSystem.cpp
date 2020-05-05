@@ -48,6 +48,42 @@ size_t VFile::write(char* buffer, size_t offset, size_t amount){
 	return ret;
 }
 
+size_t DeviceFile::size(){
+	return m_data.size();
+}
+
+size_t DeviceFile::read(char* buffer, size_t offset, size_t amount){
+	//TODO: Lock on the buffer?
+	//we just ignore the offset
+
+	while(size() == 0)
+		m_cvar.wait();
+
+	size_t ret = 0;
+	for(; ret < amount && !m_data.is_empty(); ret++)
+		buffer[ret] = m_data.remove_front();
+
+	// If we didn't wake here any waiting threads would be starved till
+	// the next write
+	if(size() != 0)
+		m_cvar.wake();
+
+	return ret;
+}
+
+size_t DeviceFile::write(char* buffer, size_t offset, size_t amount){
+	//we just ignore the offset
+
+	size_t ret = 0;
+	for(; ret < amount; ret++)
+		m_data.insert_end(buffer[ret]);
+
+	//wake up any waiting threads
+	m_cvar.wake();
+
+	return ret;
+}
+
 Serial& operator<<(Serial& serial, File& file){
 	char buffer[21];
 	for(size_t i = 0; i < file.size();){

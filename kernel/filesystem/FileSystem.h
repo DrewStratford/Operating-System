@@ -2,6 +2,7 @@
 
 #include <data/Vector.h>
 #include <devices/Serial.h>
+#include <ConditionVar.h>
 
 class DirectoryEntry;
 class Inode;
@@ -46,6 +47,17 @@ public:
 
 private:
 	Vector<char> m_data;
+};
+
+class DeviceFile : public File{
+public:
+	size_t size() override;
+	size_t write(char*, size_t offset, size_t amount) override;
+	size_t read(char*, size_t offset, size_t amount) override;
+
+private:
+	Vector<char> m_data;
+	ConditionVar m_cvar;
 };
 
 Serial& operator<<(Serial&, File&);
