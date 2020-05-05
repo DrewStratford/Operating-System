@@ -1,6 +1,8 @@
 #include <Lock.h>
 #include <devices/CPU.h>
 
+#include <Thread.h>
+
 
 void Lock::lock(){
 	NoInterrupts ni;

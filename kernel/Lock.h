@@ -1,7 +1,9 @@
 #pragma once
 
 #include <data/List.h>
-#include <Thread.h>
+
+class Blocker;
+class Thread;
 
 class Lock {
 	Thread * owner { nullptr };

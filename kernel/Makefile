@@ -12,10 +12,12 @@ init.o \
 icxxabi.o \
 Thread.o \
 Lock.o	\
+ConditionVar.o	\
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
 devices/Interrupts.o \
+devices/Keyboard.o \
 memory/Paging.o	\
 memory/PagingScope.o	\
 memory/Region.o	\
