@@ -150,7 +150,6 @@ void Thread::yield(){
 		return;
 	}
 
-	com1().write_string("about to switch\n");
 	Thread *old_thread = current_thread;
 	current_thread = runnable_threads.pop()->get_thread();
 	if(current_thread == old_thread)

@@ -77,19 +77,15 @@ char* Keyboard::handle_code(uint8_t key){
 
 void keyboard_irq(Registers& rs){
 	uint8_t key = IO::in8(0x60);
-	com1() << key << " ";
 
 	if(key == 42 || key == 54)
 		keyboard->set_shift(true);
 
 	if(key == 182 || key == 170)
 		keyboard->set_shift(false);
-	
 
 	char* key_code = keyboard->handle_code(key);
-	com1() << "key pressed: " << key_code << "\n";
 	keyboard_file().write(key_code, 0, strlen(key_code));
-
 }
 
 void initialize_keyboard(){
