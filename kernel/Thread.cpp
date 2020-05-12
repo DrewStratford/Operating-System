@@ -69,7 +69,11 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 
 Thread::Thread(File* executable){
 	NoInterrupts d;
-	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0x1000;
+
+	if(!executable)
+		panic("no executable\n");
+
+	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0xFFF;
 	stack_ptr = stack_top;
 	resume_ptr = (uintptr_t)user_thread_trampoline;
 
@@ -97,21 +101,22 @@ Thread::Thread(File* executable){
 		executable->read((char*)exec_region->get_start(), 0, executable->size());
 	}
 
-	Registers regs;
+	stack_ptr -= sizeof(Registers);
+	Registers* regs = (Registers*)stack_ptr;
+
 	//TODO: fill in registers
-	regs.cs = 0x1B;
-	regs.ss = 0x23;
-	regs.ds = 0x23;
-	regs.es = 0x23;
-	regs.gs = 0x23;
-	regs.fs = 0x23;
+	regs->cs = 0x1B;
+	regs->ss = 0x23;
+	regs->ds = 0x23;
+	regs->es = 0x23;
+	regs->gs = 0x23;
+	regs->fs = 0x23;
 
-	regs.ebp = 0; //??
-	regs.esp = (uint32_t)u_stack_top - 16;
-	regs.eip = exec_start;
-	regs.flags |= 0x200; // enable interrupts
+	regs->ebp = 0; //??
+	regs->esp = (uint32_t)u_stack_top - 16;
+	regs->eip = exec_start;
+	regs->flags |= 0x200; // enable interrupts
 
-	push_on_stack<Registers>(regs);
 	push_on_stack<Blocker>(Blocker(this));
 	Blocker* blocker = (Blocker*)stack_ptr;
 	set_state(ThreadState::Runnable);
@@ -140,7 +145,7 @@ void Thread::wake_from_list(List<Blocker> &list){
 
 	Blocker *blocker = list.pop();
 	blocker->get_thread()->set_state(ThreadState::Runnable);
-	runnable_threads.insert(blocker);
+	runnable_threads.insert_end(blocker);
 }
 
 void Thread::yield(){
@@ -179,6 +184,38 @@ void Thread::die(){
 	yield();
 }
 
+Inode* Thread::get_inode(int32_t fd){
+	if(fd < 0 || fd >= MAX_INODES)
+		return nullptr;
+	return m_inodes[fd];
+}
+
+int32_t Thread::insert_inode(Inode* inode){
+	if(!inode)
+		return -1;
+
+	for(int32_t i = 0; i < MAX_INODES; i++){
+		if(m_inodes[i] == nullptr){
+			m_inodes[i] = inode;
+			return i;
+		}
+	}
+	return -1;
+}
+
+int32_t Thread::open_file(char* filepath){
+	File* file = root_directory().lookup_file(filepath);
+	if(!file)
+		return -1;
+
+	return insert_inode(file);
+}
+
+void Thread::close_file(int32_t i){
+	if(i < MAX_INODES && i >= 0)
+		m_inodes[i] = nullptr;
+}
+
 static void tick_callback(Registers& registers){
 	int ticks = current_thread->get_remaining_ticks();
 	current_thread->set_remaining_ticks(ticks-1);
@@ -201,6 +238,39 @@ static int32_t syscall_exit_thread(Registers& registers){
 	return -1;
 }
 
+int32_t syscall_open_file(Registers& registers){
+	char** stack = (char**)registers.esp;
+	char* filepath = stack[0];
+	int32_t fd = current_thread->open_file(filepath);
+	return fd;
+}
+
+int32_t syscall_close_file(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t fd = (int32_t)stack[0];
+	current_thread->close_file(fd);
+
+	return 0;
+}
+
+int32_t syscall_read_fd(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t fd = (int32_t)stack[3];
+	char* buffer = (char*)stack[2];
+	size_t offset = (size_t)stack[1];
+	size_t amount = (size_t)stack[0];
+
+	Inode* inode = current_thread->get_inode(fd);
+	if(!inode)
+		return -1;
+
+	File* file = inode->as_file();
+	if(!file)
+		return -1;
+
+	return file->read(buffer, offset, amount);
+}
+
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
 	current_thread = &kernel_thread;
@@ -210,5 +280,8 @@ void Thread::initialize(){
 
 	register_system_call(syscall_create_thread, 1);
 	register_system_call(syscall_exit_thread, 2);
+	register_system_call(syscall_open_file, 3);
+	register_system_call(syscall_close_file, 4);
+	register_system_call(syscall_read_fd, 5);
 	register_interrupt_callback(tick_callback, 0x20);
 }

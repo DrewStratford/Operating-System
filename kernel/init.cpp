@@ -12,6 +12,12 @@
 #include <string.h>
 #include <Lock.h>
 
+void foo2(void){
+	sti();
+	while(true){
+		asm("hlt");
+	}
+}
 void foo(void){
 	File& f = keyboard_file();
 	char buffer[11];
@@ -24,6 +30,9 @@ void foo(void){
 }
 
 char foo_stack[1000];
+char foo_stack2[1000];
+
+Thread* userspace_thread = nullptr;
 
 extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_gdt_table();
@@ -39,9 +48,12 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	initialize_file_system(file_header);
 
-	Thread userspace_thread(root_directory().lookup_file("vfs/init.prog"));
+	if(File* init_file = root_directory().lookup_file("vfs/init.prog")){
+		userspace_thread = new Thread(init_file);
+	}
 
 	Thread key_thread((uintptr_t)&foo_stack[999], (uintptr_t)foo);
+	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
 	
 
 	sti();

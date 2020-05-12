@@ -49,6 +49,11 @@ public:
 
 	List<Region> m_user_regions;
 
+	Inode* get_inode(int32_t);
+	int32_t insert_inode(Inode*);
+	int32_t open_file(char*);
+	void close_file(int32_t);
+
 private:
 	uintptr_t stack_top { 0 };
 	uintptr_t stack_ptr { 0 };
@@ -61,6 +66,9 @@ private:
 	int remaining_ticks { 0 };
 
 	void wait_for_cpu(Blocker&);
+
+	#define MAX_INODES 20
+	Inode* m_inodes[MAX_INODES] = { nullptr };
 };
 
 enum BlockerStatus
