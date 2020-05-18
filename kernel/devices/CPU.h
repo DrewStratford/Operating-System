@@ -112,7 +112,7 @@ public:
 	IDTR(uint16_t limit, uint32_t base);
 };
 
-extern "C" uint32_t get_eflags();
+uint32_t get_eflags();
 void sti();
 void cli();
 

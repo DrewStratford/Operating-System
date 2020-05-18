@@ -128,11 +128,13 @@ IDTR::IDTR(uint16_t limit, uint32_t base){
 	this->base = base;
 }
 
-static void asm_dummy(){
-	asm("get_eflags:\n"
-		"	pushf\n"
-		"	pop %%eax\n"
-		"	ret\n" ::);
+uint32_t get_eflags(){
+	uint32_t flags = 0;
+	asm("pushf\n"
+		"pop %0\n"
+		:: "irm"(flags));
+
+	return flags;
 }
 
 void sti(){
