@@ -15,7 +15,7 @@ void system_call_handler(Registers& registers);
 int32_t syscall_debug(Registers& registers){
 	char** stack = (char**)registers.esp;
 	char* message = stack[0];
-	com1() << message << "\n";
+	com1() << message;
 	return 0;
 }
 
