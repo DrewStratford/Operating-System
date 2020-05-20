@@ -18,18 +18,6 @@ void foo2(void){
 		asm("hlt");
 	}
 }
-void foo(void){
-	File& f = keyboard_file();
-	char buffer[11];
-
-	while(true){
-		int c = f.read(buffer, 0, 10);
-		buffer[c] = '\0';
-		com1() << "{" << buffer << "}\n";
-	}
-}
-
-char foo_stack[1000];
 char foo_stack2[1000];
 
 Thread* userspace_thread = nullptr;
@@ -52,7 +40,8 @@ extern "C" int kernel_main(multiboot_info_t* info){
 		userspace_thread = new Thread(init_file);
 	}
 
-	Thread key_thread((uintptr_t)&foo_stack[999], (uintptr_t)foo);
+	root_directory().add_entry("keyboard", &keyboard_file());
+
 	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
 	
 
