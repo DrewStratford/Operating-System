@@ -99,7 +99,7 @@ Thread::Thread(File& executable){
 	}
 
 	stack_ptr -= sizeof(Registers);
-	volatile Registers* regs = (Registers*)stack_ptr;
+	Registers* regs = (Registers*)stack_ptr;
 
 	//TODO: fill in registers
 	regs->cs = 0x1B;
@@ -112,7 +112,7 @@ Thread::Thread(File& executable){
 	regs->ebp = 0; //??
 	regs->esp = (uint32_t)u_stack_top - 16;
 	regs->eip = exec_start;
-	regs->flags |= 0x200; // enable interrupts
+	regs->flags = 0x200; // enable interrupts
 
 	push_on_stack<Blocker>(Blocker(this));
 	Blocker* blocker = (Blocker*)stack_ptr;
