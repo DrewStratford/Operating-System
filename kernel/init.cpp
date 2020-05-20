@@ -37,7 +37,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_file_system(file_header);
 
 	if(File* init_file = root_directory().lookup_file("vfs/init.prog")){
-		userspace_thread = new Thread(init_file);
+		userspace_thread = new Thread(*init_file);
 	}
 
 	root_directory().add_entry("keyboard", &keyboard_file());

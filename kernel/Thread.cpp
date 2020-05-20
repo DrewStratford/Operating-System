@@ -67,11 +67,8 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 	runnable_threads.insert(blocker);
 }
 
-Thread::Thread(File* executable){
+Thread::Thread(File& executable){
 	NoInterrupts d;
-
-	if(!executable)
-		panic("no executable\n");
 
 	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0xFFF;
 	stack_ptr = stack_top;
@@ -85,7 +82,7 @@ Thread::Thread(File* executable){
 	uintptr_t u_stack_top = 0xFF000000;
 	uintptr_t u_stack_bottom = u_stack_top - u_stack_size;
 	uintptr_t exec_start = 0x40000000;
-	uintptr_t exec_size = executable->size();
+	uintptr_t exec_size = executable.size();
 	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
 	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
 
@@ -98,7 +95,7 @@ Thread::Thread(File* executable){
 	// instead.
 	{
 		PagingScope scope(*this);
-		executable->read((char*)exec_region->get_start(), 0, executable->size());
+		executable.read((char*)exec_region->get_start(), 0, executable.size());
 	}
 
 	stack_ptr -= sizeof(Registers);
@@ -226,7 +223,7 @@ static int32_t syscall_create_thread(Registers& registers){
 	char* filepath = stack[0];
 
 	if(File* f = root_directory().lookup_file(filepath)){
-		Thread *t = new Thread(f);
+		Thread *t = new Thread(*f);
 		//TODO: should return new thread id
 		return 0;
 	}
