@@ -8,6 +8,7 @@ CC := g++
 
 OBJS =\
 string.o \
+Stream.o \
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@

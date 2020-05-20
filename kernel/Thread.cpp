@@ -102,7 +102,7 @@ Thread::Thread(File* executable){
 	}
 
 	stack_ptr -= sizeof(Registers);
-	Registers* regs = (Registers*)stack_ptr;
+	volatile Registers* regs = (Registers*)stack_ptr;
 
 	//TODO: fill in registers
 	regs->cs = 0x1B;
@@ -278,10 +278,10 @@ void Thread::initialize(){
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
 	current_thread->set_pdir(kernel_page_directory());
 
-	register_system_call(syscall_create_thread, 1);
-	register_system_call(syscall_exit_thread, 2);
-	register_system_call(syscall_open_file, 3);
-	register_system_call(syscall_close_file, 4);
-	register_system_call(syscall_read_fd, 5);
+	register_system_call(syscall_create_thread, SC_create_thread);
+	register_system_call(syscall_exit_thread, SC_exit_thread);
+	register_system_call(syscall_open_file, SC_open_file);
+	register_system_call(syscall_close_file, SC_close_file);
+	register_system_call(syscall_read_fd, SC_read);
 	register_interrupt_callback(tick_callback, 0x20);
 }

@@ -159,7 +159,7 @@ void initialize_interrupts(){
 	for(size_t i = 0; i < 256; i++)
 		system_calls[i] = nullptr;
 
-	register_system_call(syscall_debug, 0);
+	register_system_call(syscall_debug, SC_debug);
 	
 	// remap the PIC
 	IO::out8(0x20, 0x11); //restart both PICs

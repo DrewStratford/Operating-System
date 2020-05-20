@@ -2,15 +2,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <Stream.h>
+
 #define COM1 0x3F8  
 
-class Serial{
+class Serial : public OutStream {
 
 public:
 	Serial(int port);
 	int putchar(const char);
-	int write(const char*, size_t);
-	int write_string(const char*);
 private:
 	int m_port { 0 };
 

@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <devices/CPU.h>
 
+#include <SyscallInfo.h>
+
 typedef void (*InterruptCallback)(Registers&);
 typedef int32_t (*SystemCall)(Registers&);
 
