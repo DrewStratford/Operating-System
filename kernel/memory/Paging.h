@@ -42,7 +42,7 @@ enum PageFaultType{
 //#include <memory/Region.h>
 class Region;
 
-Serial& operator<<(Serial& serial, PageFaultType err_code);
+OutStream& operator<<(OutStream&, PageFaultType err_code);
 
 void initialize_paging();
 void load_cr3(uintptr_t cr3);

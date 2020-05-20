@@ -73,8 +73,8 @@ void GuardRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	panic("");
 }
 
-Serial& operator<<(Serial& serial, Region const& reg){
-	serial << "Region: " << reg.get_description() << ", start: " 
+OutStream& operator<<(OutStream& stream, Region const& reg){
+	stream << "Region: " << reg.get_description() << ", start: " 
 			<< (void*)reg.get_start() << ", end: " << (void*)reg.end();
-	return serial;
+	return stream;
 }

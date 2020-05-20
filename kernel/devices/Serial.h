@@ -18,7 +18,3 @@ private:
 };
 
 Serial& com1();
-
-Serial& operator<<(Serial& serial, char*);
-Serial& operator<<(Serial& serial, int);
-Serial& operator<<(Serial& serial, void*);

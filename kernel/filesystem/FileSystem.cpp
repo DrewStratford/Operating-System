@@ -84,15 +84,15 @@ size_t DeviceFile::write(char* buffer, size_t offset, size_t amount){
 	return ret;
 }
 
-Serial& operator<<(Serial& serial, File& file){
+OutStream& operator<<(OutStream& stream, File& file){
 	char buffer[21];
 	for(size_t i = 0; i < file.size();){
 		size_t read = file.read(buffer, i, 20);
 		i+= read;
 		buffer[read] = '\0';
-		serial << buffer;
+		stream << buffer;
 	}
-	return serial;
+	return stream;
 }
 
 Directory::Directory(){

@@ -60,7 +60,7 @@ private:
 	ConditionVar m_cvar;
 };
 
-Serial& operator<<(Serial&, File&);
+OutStream& operator<<(OutStream&, File&);
 
 class Directory : public Inode{
 public:

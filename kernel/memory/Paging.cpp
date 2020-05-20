@@ -143,9 +143,9 @@ static char* pagefaulttype_strs[] = {
 	"UserReadNP", "UserReadPF", "UserWriteNP", "UserWritePF"
 };
 
-Serial& operator<<(Serial& serial, PageFaultType err_code){
-	serial << pagefaulttype_strs[err_code];
-	return serial;
+OutStream& operator<<(OutStream& stream, PageFaultType err_code){
+	stream << pagefaulttype_strs[err_code];
+	return stream;
 }
 
 static PTE* get_recursive_table(uintptr_t address){

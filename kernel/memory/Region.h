@@ -43,4 +43,4 @@ public:
 	virtual void handle_page_fault(PageFaultType, uintptr_t addr);
 };
 
-Serial& operator<<(Serial& serial, Region const& region);
+OutStream& operator<<(OutStream&, Region const& region);
