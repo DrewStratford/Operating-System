@@ -268,6 +268,24 @@ int32_t syscall_read_fd(Registers& registers){
 	return file->read(buffer, offset, amount);
 }
 
+int32_t syscall_write_fd(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t fd = (int32_t)stack[3];
+	char* buffer = (char*)stack[2];
+	size_t offset = (size_t)stack[1];
+	size_t amount = (size_t)stack[0];
+
+	Inode* inode = current_thread->get_inode(fd);
+	if(!inode)
+		return -1;
+
+	File* file = inode->as_file();
+	if(!file)
+		return -1;
+
+	return file->write(buffer, offset, amount);
+}
+
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
 	current_thread = &kernel_thread;
@@ -280,5 +298,6 @@ void Thread::initialize(){
 	register_system_call(syscall_open_file, SC_open_file);
 	register_system_call(syscall_close_file, SC_close_file);
 	register_system_call(syscall_read_fd, SC_read);
+	register_system_call(syscall_write_fd, SC_write);
 	register_interrupt_callback(tick_callback, 0x20);
 }
