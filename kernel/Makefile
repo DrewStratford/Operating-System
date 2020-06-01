@@ -29,6 +29,11 @@ all: os.iso
 libc:
 	make -C ../libc
 
+userspace:
+	make -C ../userspace
+	../tools/makevfs ../userspace/*.prog
+
+
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
 
@@ -38,10 +43,7 @@ libc:
 os.kernel: $(OBJS)
 	$(CC) -T linker.ld -o $@ $(CPPFLAGS) $(OBJS)
 
-vfs: vfs/*
-	../tools/makevfs vfs/*
-
-os.iso: libc os.kernel vfs
+os.iso: libc userspace os.kernel vfs
 	cp os.kernel ../bootdir/boot/
 	cp myvfs.vfs ../bootdir/boot/init.initrd
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
@@ -54,9 +56,8 @@ debug: os.iso
 
 clean:
 	rm -f $(OBJS)
-	#rm -f *.o
-	#rm -f devices/*.o
 	rm -f os.kernel
 	rm -f os.iso
 	rm -f ../bootdir/boot/os.kernel
 	make -C ../libc clean
+	make -C ../userspace clean
