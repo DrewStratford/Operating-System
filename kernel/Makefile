@@ -43,7 +43,7 @@ userspace:
 os.kernel: $(OBJS)
 	$(CC) -T linker.ld -o $@ $(CPPFLAGS) $(OBJS)
 
-os.iso: libc userspace os.kernel vfs
+os.iso: libc userspace os.kernel
 	cp os.kernel ../bootdir/boot/
 	cp myvfs.vfs ../bootdir/boot/init.initrd
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
