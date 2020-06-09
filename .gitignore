@@ -5,3 +5,4 @@
 *.a
 *.vfs
 *.initrd
+*.prog

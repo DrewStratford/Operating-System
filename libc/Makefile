@@ -1,5 +1,5 @@
 INCLUDE_FLAGS := -I.
-CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti
+CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti -fno-pie
 CC := g++
 
 .PHONY: run clean all install
@@ -9,6 +9,7 @@ CC := g++
 OBJS =\
 string.o \
 Stream.o \
+System.o \
 
 %.o : %.cpp
 	$(CC) -c $(CPPFLAGS) $< -o $@
