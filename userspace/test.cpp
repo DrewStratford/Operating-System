@@ -2,7 +2,7 @@
 #include <string.h>
 
 int main(void){
-	debug("hello from userspace");	
+	debug("hello from userspace\n");	
 	int fd = open("console");
 	char buf[11];
 	int c = 0;
@@ -13,6 +13,7 @@ int main(void){
 		write(fd, (void*)"-->: ", 0, strlen("-->: "));
 		write(fd, buf, 0, strlen(buf));
 	}
+	debug("exiting test\n");
 	exit();
 	return 0;
 }

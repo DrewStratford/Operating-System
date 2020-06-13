@@ -135,7 +135,7 @@ void VGATerminal::emit(char c){
 			putchar('\b');
 			break;
 		//handle ^D
-		case 0x03:
+		case 0x04:
 			m_data.insert_end('\0');
 			line_count++;
 			m_cvar.wake();

@@ -8,9 +8,11 @@ class Keyboard{
 public:
 
 	void set_shift(bool);
+	void set_ctrl(bool);
 	char* handle_code(uint8_t);
 private:
 	bool m_is_shift { false };
+	bool m_is_ctrl { false };
 };
 
 void initialize_keyboard(VGATerminal*);
