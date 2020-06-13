@@ -6,6 +6,7 @@
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
 #include <devices/Keyboard.h>
+#include <devices/TTY.h>
 #include <memory/Paging.h>
 #include <memory/Heap.h>
 #include <filesystem/FileSystem.h>
@@ -22,11 +23,12 @@ char foo_stack2[1000];
 
 Thread* userspace_thread = nullptr;
 
+VGATerminal* terminal = nullptr;
+
 extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_gdt_table();
 	initialize_interrupts();
 	initialize_paging();
-	initialize_keyboard();
 	com1() << "greetings\n";
 	Thread::initialize();
 
@@ -36,11 +38,15 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	initialize_file_system(file_header);
 
+	terminal = new VGATerminal();
+	initialize_keyboard(terminal);
+	terminal->clear();
+
 	if(File* init_file = root_directory().lookup_file("vfs/init.prog")){
 		userspace_thread = new Thread(*init_file);
 	}
 
-	root_directory().add_entry("keyboard", &keyboard_file());
+	root_directory().add_entry("console", terminal);
 
 	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
 	

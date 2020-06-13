@@ -9,7 +9,7 @@
 
 
 Keyboard* keyboard = nullptr;
-DeviceFile* key_stream = nullptr;
+VGATerminal* console = nullptr;
 
 char* key_map[] = {
 	"\0",
@@ -85,15 +85,15 @@ void keyboard_irq(Registers& rs){
 		keyboard->set_shift(false);
 
 	char* key_code = keyboard->handle_code(key);
-	keyboard_file().write(key_code, 0, strlen(key_code));
+	console->input(key_code, strlen(key_code));
 }
 
-void initialize_keyboard(){
+void initialize_keyboard(VGATerminal* term){
 	keyboard = new Keyboard();
-	key_stream = new DeviceFile();
+	console = term;
 	register_interrupt_callback(keyboard_irq, 0x21);
 }
 
 File& keyboard_file(){
-	return *key_stream;
+	return *console;
 }

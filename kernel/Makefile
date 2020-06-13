@@ -1,5 +1,5 @@
 INCLUDE_FLAGS := -I. -I../libc/
-CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti 
+CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti -Wno-write-strings -std=gnu++2a
 CC := g++
 
 .PHONY: run clean all install
@@ -18,6 +18,7 @@ devices/Serial.o \
 devices/CPU.o \
 devices/Interrupts.o \
 devices/Keyboard.o \
+devices/TTY.o \
 memory/Paging.o	\
 memory/PagingScope.o	\
 memory/Region.o	\

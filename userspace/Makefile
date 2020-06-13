@@ -1,5 +1,5 @@
 INCLUDE_FLAGS := -I. -I../libc/ -L../libc/
-CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti -fno-pie
+CPPFLAGS := -ggdb3 $(INCLUDE_FLAGS) -m32 -ffreestanding -fno-stack-protector -Wall -nostdlib -fno-exceptions -fno-rtti -fno-pie -Wno-write-strings
 CC := g++
 
 .PHONY: run clean all install

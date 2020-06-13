@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <filesystem/FileSystem.h>
+#include <devices/TTY.h>
 
 class Keyboard{
 public:
@@ -12,5 +13,5 @@ private:
 	bool m_is_shift { false };
 };
 
-void initialize_keyboard();
+void initialize_keyboard(VGATerminal*);
 File& keyboard_file();
