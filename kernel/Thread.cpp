@@ -10,6 +10,8 @@ List<Blocker> dying_threads;
 Thread kernel_thread;
 Thread *current_thread = &kernel_thread;
 
+uint32_t Thread:: tid_allocator = 1;
+
 void Thread::switch_thread(Thread& from, Thread& to){
     asm("pushfl\n"
         "pushl %%ebp\n"
@@ -53,6 +55,10 @@ Thread::Thread() {}
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
 	NoInterrupts i;
+	tid = tid_allocator++;
+	parent_tid = current_thread->get_tid();
+	com1() << "created thread: tid=" << (int)tid << ", parent tid=" << (int)parent_tid << "\n";
+
 	stack_top = stack;
 	stack_ptr = stack;
 	push_on_stack<uintptr_t>(start);
@@ -69,6 +75,10 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 
 Thread::Thread(File& executable){
 	NoInterrupts d;
+
+	tid = tid_allocator++;
+	parent_tid = current_thread->get_tid();
+	com1() << "created thread: tid=" << (int)tid << ", parent tid=" << (int)parent_tid << "\n";
 
 	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0xFFF;
 	stack_ptr = stack_top;

@@ -47,6 +47,9 @@ public:
 	PTE* get_pdir() { return pdir; };
 	void set_pdir(PTE* new_pdir) { pdir = new_pdir; };
 
+	uint32_t get_tid() { return tid; };
+	uint32_t get_parent_tid() { return parent_tid; };
+
 	List<Region> m_user_regions;
 
 	Inode* get_inode(int32_t);
@@ -60,6 +63,9 @@ private:
 	uintptr_t resume_ptr { 0 };
 	ThreadState state;
 
+	uint32_t tid { 0 };
+	uint32_t parent_tid  { 0 };
+
 	PTE* pdir = nullptr;
 
 	int default_ticks { 5 };
@@ -69,6 +75,8 @@ private:
 
 	#define MAX_INODES 20
 	Inode* m_inodes[MAX_INODES] = { nullptr };
+
+	static uint32_t tid_allocator;
 };
 
 enum BlockerStatus
