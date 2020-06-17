@@ -1,4 +1,5 @@
 #include <devices/TTY.h>
+#include <devices/IO.h>
 #include <string.h>
 
 static inline uint8_t vga_entry_colour(uint8_t fg, uint8_t bg) {
@@ -7,6 +8,23 @@ static inline uint8_t vga_entry_colour(uint8_t fg, uint8_t bg) {
  
 static inline uint16_t vga_entry(char uc, uint8_t color) {
 	return (uint16_t) uc | (uint16_t) color << 8;
+}
+
+// I'm not entirely sure how it works.
+//
+// I guess 0x3d4 is the vga controllers command register
+// and 0x3d5 is the data register.
+//
+// Following Ralph Brown's port guide:
+// 0x3d4 specifies the register to be set
+// by 0x3d5. 0x0F is cursor low, 0x0E is cursor high.
+void VGATerminal::update_cursor(){
+	uint16_t pos = y * width + x;
+
+	IO::out8(0x3D4, 0x0F);
+	IO::out8(0x3D5, (uint8_t)(pos & 0xFF));
+	IO::out8(0x3D4, 0x0E);
+	IO::out8(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
 void VGATerminal::draw_at(int x, int y, char c){
@@ -26,7 +44,10 @@ void VGATerminal::scroll_up(){
 }
 
 void VGATerminal::clear_line(int line){
-	memset(&screen[line * width], 0, width * sizeof(uint16_t));
+	uint8_t colour = vga_entry_colour(foreground, background);
+	uint16_t out = vga_entry(' ', colour);
+	for(int i = 0; i < width; i++)
+		screen[line*width + i] = out;
 }
 
 void VGATerminal::clear(){
@@ -35,6 +56,8 @@ void VGATerminal::clear(){
 
 	for(int i = 0; i < height; i++)
 		clear_line(i);
+
+	update_cursor();
 }
 
 int VGATerminal::putchar(char c){
@@ -156,4 +179,6 @@ void VGATerminal::input(char* cs, size_t amount){
 	ScopedLocker locker(&m_lock);
 	for(int i = 0; i < amount; i++)
 		emit(cs[i]);
+
+	update_cursor();
 }

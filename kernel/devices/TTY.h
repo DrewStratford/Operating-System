@@ -35,10 +35,11 @@ private:
 
 	int line_count { 0 };
 
-	uint8_t foreground { 2 };
-	uint8_t background { 0 };
+	uint8_t foreground { 0 };
+	uint8_t background { 0xF };
 
 	void draw_at(int x, int y, char);
+	void update_cursor();
 
 	Vector<char> m_data;
 	Lock m_lock;
