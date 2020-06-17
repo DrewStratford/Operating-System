@@ -2,6 +2,7 @@
 
 #include <data/Vector.h>
 #include <devices/Serial.h>
+#include <Lock.h>
 #include <ConditionVar.h>
 
 class DirectoryEntry;
@@ -14,6 +15,9 @@ class Inode{
 public:
 	virtual File* as_file() { return nullptr; };
 	virtual Directory* as_directory() { return nullptr; };
+
+protected:
+	Lock m_lock;
 };
 
 class DirectoryEntry{

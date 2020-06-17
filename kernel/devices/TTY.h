@@ -41,5 +41,6 @@ private:
 	void draw_at(int x, int y, char);
 
 	Vector<char> m_data;
+	Lock m_lock;
 	ConditionVar m_cvar;
 };

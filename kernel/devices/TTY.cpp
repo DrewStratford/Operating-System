@@ -66,6 +66,7 @@ size_t VGATerminal::size(){
 
 // A write just draws to the console.
 size_t VGATerminal::write(char* cs, size_t offset, size_t amount){
+	ScopedLocker locker(&m_lock);
 	for(int i = 0; i < amount; i++)
 		putchar(cs[i]);
 
@@ -75,8 +76,9 @@ size_t VGATerminal::write(char* cs, size_t offset, size_t amount){
 // reads from a blocking buffer. Data is supplied to the buffer
 // by the keyboard driver.
 size_t VGATerminal::read(char* cs, size_t offset, size_t amount){
+	ScopedLocker locker(&m_lock);
 	while(line_count < 1)
-		m_cvar.wait();
+		m_cvar.wait(m_lock);
 	
 	size_t out = 0;
 	for(; out < amount && !m_data.is_empty(); out++){
@@ -151,6 +153,7 @@ void VGATerminal::emit(char c){
 // This provides input to the data queue. The data is also echoed to the
 // screen.
 void VGATerminal::input(char* cs, size_t amount){
+	ScopedLocker locker(&m_lock);
 	for(int i = 0; i < amount; i++)
 		emit(cs[i]);
 }

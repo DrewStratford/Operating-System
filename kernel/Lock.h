@@ -12,6 +12,8 @@ class Lock {
 public:
 	void lock();
 	void unlock();
+
+	Thread* get_owner() { return owner; }
 };
 
 class ScopedLocker{

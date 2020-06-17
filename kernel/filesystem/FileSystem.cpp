@@ -37,6 +37,8 @@ size_t VFile::read(char* buffer, size_t offset, size_t amount){
 }
 
 size_t VFile::write(char* buffer, size_t offset, size_t amount){
+	ScopedLocker locker(&m_lock);
+
 	if(offset > m_data.size())
 		return 0;
 	
@@ -53,11 +55,10 @@ size_t DeviceFile::size(){
 }
 
 size_t DeviceFile::read(char* buffer, size_t offset, size_t amount){
-	//TODO: Lock on the buffer?
-	//we just ignore the offset
+	ScopedLocker locker(&m_lock);
 
 	while(size() == 0)
-		m_cvar.wait();
+		m_cvar.wait(m_lock);
 
 	size_t ret = 0;
 	for(; ret < amount && !m_data.is_empty(); ret++)
