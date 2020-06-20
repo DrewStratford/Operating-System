@@ -43,8 +43,8 @@ int write(int fd, void* buffer, size_t offset, size_t count){
 		"mov %[no], %%eax\n"
 		"int $0x80\n"
 		"add $0x10, %%esp\n"
-		: [out]"=rm"(out)
-		: [no]"i"(SC_write), 
+		: "=a"(out)
+		: [no]"i"(SC_write),
 		  [fd]"irm"(fd),
 		  [buf]"irm"(buffer),
 		  [off]"irm"(offset),
@@ -61,11 +61,31 @@ int read(int fd, void* buffer, size_t offset, size_t count){
 		"mov %[no], %%eax\n"
 		"int $0x80\n"
 		"add $0x10, %%esp\n"
-		: [out]"=rm"(out)
-		: [no]"i"(SC_read), 
+		: "=a"(out)
+		: [no]"i"(SC_read),
 		  [fd]"irm"(fd),
 		  [buf]"irm"(buffer),
 		  [off]"irm"(offset),
 		  [size]"irm"(count));
+	return out;
+}
+
+int create_thread(char* cs){
+	return create_thread(cs, 0, nullptr);
+}
+
+int create_thread(char* cs, size_t inode_count, int* inodes){
+	int out = 0;
+	asm("push %[is]\n"
+		"push %[icount]\n"
+		"push %[path]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x0c, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_create_thread),
+		  [path]"irm"(cs),
+		  [icount]"irm"(inode_count),
+		  [is]"irm"(inodes));
 	return out;
 }

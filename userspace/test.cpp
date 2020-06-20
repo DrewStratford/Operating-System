@@ -3,15 +3,14 @@
 
 int main(void){
 	debug("hello from userspace\n");	
-	int fd = open("console");
+	int stdfd = 0;
 	char buf[61];
 	int c = 0;
 
-	while(c = read(fd, buf, 0, 60)){
+	while(c = read(stdfd, buf, 0, 60)){
 		buf[c] = '\0';
-		debug(buf);
-		write(fd, (void*)"-->: ", 0, strlen("-->: "));
-		write(fd, buf, 0, strlen(buf));
+		write(stdfd, (void*)"-->: ", 0, strlen("-->: "));
+		write(stdfd, buf, 0, strlen(buf));
 	}
 	debug("exiting test\n");
 	exit();

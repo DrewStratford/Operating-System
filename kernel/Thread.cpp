@@ -73,7 +73,7 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 	runnable_threads.insert(blocker);
 }
 
-Thread::Thread(File& executable){
+Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	NoInterrupts d;
 
 	tid = tid_allocator++;
@@ -87,6 +87,11 @@ Thread::Thread(File& executable){
 	PTE* page_dir = (PTE*)kmemalign(0x1000, 0x1000);
 	initialize_page_directory(page_dir);
 	set_pdir(page_dir);
+
+	// Copy inodes from the current process if neccesary.
+	for(size_t i = 0; inodes && i < 20 && i < inode_count; i++){
+		insert_inode(current_thread->get_inode(inodes[i]));
+	}
 
 	uintptr_t u_stack_size = 0xf000;
 	uintptr_t u_stack_top = 0xFF000000;
@@ -229,11 +234,13 @@ static void tick_callback(Registers& registers){
 }
 
 static int32_t syscall_create_thread(Registers& registers){
-	char** stack = (char**)registers.esp;
-	char* filepath = stack[0];
+	void** stack = (void**)registers.esp;
+	char* filepath = (char*)stack[0];
+	size_t inode_count = (size_t)stack[1];
+	int* inodes = (int*)stack[2];
 
 	if(File* f = root_directory().lookup_file(filepath)){
-		Thread *t = new Thread(*f);
+		Thread *t = new Thread(*f, inode_count, inodes);
 		//TODO: should return new thread id
 		return 0;
 	}

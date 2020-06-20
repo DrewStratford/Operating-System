@@ -1,34 +1,15 @@
-#include  <SyscallInfo.h>
+#include <System.h>
+#include <string.h>
 
-int debug(char* cs){
-	asm("push %[msg]\n"
-		"mov %[no], %%eax\n"
-		"int $0x80\n"
-		"add $0x04, %%esp\n"
-		:: [no]"i"(SC_debug), [msg]"irm"(cs));
-	return 0;
-}
-
-int create_thread(char* cs){
-	asm("push %[msg]\n"
-		"mov %[no], %%eax\n"
-		"int $0x80\n"
-		"add $0x04, %%esp\n"
-		:: [no]"i"(SC_create_thread), [msg]"irm"(cs));
-	return 0;
-}
-
-int exit(){
-	asm("mov %[no], %%eax\n"
-		"int $0x80\n"
-		:: [no]"i"(SC_exit_thread));
-	return 0;
-}
+char* init_message =
+"welcome to OS (name change pending)\n\
+Running init ...\n";
 
 int main(void){
-	debug("-> INIT\n");	
-	create_thread("vfs/test.prog");
-	debug("-> created thread\n");	
+	int console = open("console");
+	write(console, init_message, 0, strlen(init_message));
+	int fds[] = { console };
+	create_thread("vfs/test.prog", 1, fds );
 	exit();
 	return 0;
 }

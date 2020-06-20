@@ -20,7 +20,7 @@ class Thread : public ListNode<Thread>{
 public:
 	Thread();
 	Thread(uintptr_t stack, uintptr_t resume);
-	Thread(File&);
+	Thread(File&, size_t inode_count, int* inodes);
 
 	template <typename T>
 	void push_on_stack(T t){
