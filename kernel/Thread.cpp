@@ -242,7 +242,7 @@ static int32_t syscall_create_thread(Registers& registers){
 	if(File* f = root_directory().lookup_file(filepath)){
 		Thread *t = new Thread(*f, inode_count, inodes);
 		//TODO: should return new thread id
-		return 0;
+		return t->get_tid();
 	}
 	return -1;
 }
