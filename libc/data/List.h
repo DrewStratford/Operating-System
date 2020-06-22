@@ -8,6 +8,13 @@ template <typename T>
 class ListNode {
 public:
 	void remove(){
+		if(!container)
+			return;
+
+		container->remove(this);
+	}
+
+	void remove_internal(){
 		if(previous != nullptr)
 			previous->next = next;
 		if(next != nullptr)
@@ -15,11 +22,13 @@ public:
 
 		previous = nullptr;
 		next = nullptr;
+		container = nullptr;
 	}
 
 	friend class List<T>;
 	T* previous { nullptr };
 	T* next { nullptr };
+	List<T>* container;
 };
 
 template <typename T>
@@ -30,52 +39,54 @@ public:
 			head = removee->next;
 		if(removee == tail)
 			tail = removee->previous;
-		removee->remove();
+		removee->remove_internal();
 	}
 
 	void insert(T* insertee){
-		if(head == nullptr){
-			head = insertee;
+		if(head == nullptr)
 			tail = insertee;
-		} else {
+		else
 			insert_before(insertee, head);
-			head = insertee;
-		}
+
+		head = insertee;
+		insertee->container = this;
 	}
 
 	void insert_end(T* insertee){
-		if(head == nullptr){
+		if(head == nullptr)
 			head = insertee;
-			tail = insertee;
-		} else {
+		else
 			insert_after(insertee, tail);
-			tail = insertee;
-		}
+
+		tail = insertee;
+		insertee->container = this;
 	}
 
 	T* pop_end(){
 		if(tail == nullptr)
 			return nullptr;
+
 		T* out = tail;
 		tail = tail->previous;
 
 		if(tail == nullptr)
 			head = nullptr;
 
-		out->remove();
+		out->remove_internal();
 		return out;
 	}
 
 	T* pop(){
 		if(head == nullptr)
 			return nullptr;
+
 		T* out = head;
 		head = out->next;
 
 		if(head == nullptr)
 			tail = nullptr;
 
-		out->remove();
+		out->remove_internal();
 		return out;
 	}
 
