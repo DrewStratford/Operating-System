@@ -35,8 +35,9 @@ void VGATerminal::draw_at(int x, int y, char c){
 }
 
 void VGATerminal::scroll_up(){
-	for(int i = 0; i < height-1; i++)
-		memcpy(&screen[i*width], &screen[(i+1)*width], width*2);
+	size_t screen_end = (height*width)-width;
+	for(size_t i = 0; i < screen_end; i++)
+		screen[i] = screen[i+width];
 
 	y--;
 	x = 0;
