@@ -9,6 +9,7 @@ CC := g++
 OBJS =\
 string.o \
 Stream.o \
+FileStream.o \
 System.o \
 
 %.o : %.cpp
