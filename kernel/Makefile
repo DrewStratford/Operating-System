@@ -9,7 +9,6 @@ CC := g++
 OBJS =\
 boot.o \
 init.o \
-icxxabi.o \
 Thread.o \
 Lock.o	\
 ConditionVar.o	\
