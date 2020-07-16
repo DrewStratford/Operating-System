@@ -27,17 +27,28 @@ void VGATerminal::update_cursor(){
 	IO::out8(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
+void VGATerminal::draw_at(size_t index, uint16_t out){
+	uint8_t colour = vga_entry_colour(foreground, background);
+
+	uint16_t previous = screen_buffer[index];
+	if(out != previous){
+		screen_buffer[index] = out;
+		screen[index] = out;
+	}
+}
+
 void VGATerminal::draw_at(int x, int y, char c){
 	uint8_t colour = vga_entry_colour(foreground, background);
 	uint16_t out = vga_entry(c, colour);
 
-	screen[y * width + x] = out;
+	draw_at(y * width + x, out);
 }
 
 void VGATerminal::scroll_up(){
 	size_t screen_end = (height*width)-width;
+
 	for(size_t i = 0; i < screen_end; i++)
-		screen[i] = screen[i+width];
+		draw_at(i, screen_buffer[i + width]);
 
 	y--;
 	x = 0;
@@ -47,8 +58,10 @@ void VGATerminal::scroll_up(){
 void VGATerminal::clear_line(int line){
 	uint8_t colour = vga_entry_colour(foreground, background);
 	uint16_t out = vga_entry(' ', colour);
-	for(int i = 0; i < width; i++)
+	for(int i = 0; i < width; i++) {
 		screen[line*width + i] = out;
+		screen_buffer[line*width + i] = out;
+	}
 }
 
 void VGATerminal::clear(){
@@ -172,6 +185,7 @@ void VGATerminal::emit(char c){
 			m_data.insert_end(c);
 			break;
 	}
+	update_cursor();
 }
 
 // This provides input to the data queue. The data is also echoed to the

@@ -30,8 +30,9 @@ private:
 	// In the future we should ensure this belongs to a proper memory
 	// region.
 	uint16_t* screen { (uint16_t*) 0xb8000 };
-	const int width { 80 };
-	const int height { 25 };
+	static constexpr int width { 80 };
+	static constexpr int height { 25 };
+	uint16_t screen_buffer[width*height];
 
 	int line_count { 0 };
 
@@ -39,6 +40,7 @@ private:
 	uint8_t background { 0xF };
 
 	void draw_at(int x, int y, char);
+	void draw_at(size_t index, uint16_t);
 	void update_cursor();
 
 	Vector<char> m_data;
