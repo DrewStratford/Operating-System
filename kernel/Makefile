@@ -18,6 +18,7 @@ devices/CPU.o \
 devices/Interrupts.o \
 devices/Keyboard.o \
 devices/TTY.o \
+devices/Clock.o \
 memory/Paging.o	\
 memory/PagingScope.o	\
 memory/Region.o	\

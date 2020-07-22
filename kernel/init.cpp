@@ -7,6 +7,7 @@
 #include <devices/Interrupts.h>
 #include <devices/Keyboard.h>
 #include <devices/TTY.h>
+#include <devices/Clock.h>
 #include <memory/Paging.h>
 #include <memory/Heap.h>
 #include <filesystem/FileSystem.h>
@@ -49,7 +50,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	root_directory().add_entry("console", terminal);
 
 	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
-	
+	com1() << "timestamp: " << current_timestamp() << "\n";
 
 	sti();
 	while(true){
