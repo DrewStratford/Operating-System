@@ -10,6 +10,7 @@ OBJS =\
 string.o \
 Stream.o \
 FileStream.o \
+Time.o \
 icxxabi.o \
 System.o \
 
