@@ -16,6 +16,15 @@ int exit(){
 	return 0;
 }
 
+int32_t get_time(){
+	int32_t out = 0;
+	asm("mov %[no], %%eax\n"
+		"int $0x80\n"
+		: "=a"(out)
+		: [no]"i"(SC_timestamp));
+	return out;
+}
+
 int open(char* cs){
 	asm("push %[path]\n"
 		"mov %[no], %%eax\n"

@@ -12,3 +12,4 @@
 #define SC_close_file 4
 #define SC_read	5
 #define SC_write 6
+#define SC_timestamp 7

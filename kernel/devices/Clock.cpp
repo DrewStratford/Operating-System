@@ -1,8 +1,11 @@
 #include <devices/Clock.h>
 #include <devices/IO.h>
 #include <devices/Serial.h>
+#include <devices/Interrupts.h>
 
 #include <Time.h>
+
+namespace Clock{
 
 constexpr uint8_t cmos_port = 0x70;
 constexpr uint8_t cmos_data = 0x71;
@@ -29,7 +32,7 @@ static uint8_t bcd(uint8_t byte){
 }
 
 
-int32_t current_timestamp(){
+int32_t current(){
 	uint8_t year = read_cmos(cmos_year);
 	uint8_t month = read_cmos(cmos_month);
 	uint8_t day = read_cmos(cmos_day);
@@ -58,3 +61,13 @@ int32_t current_timestamp(){
 
 	return unix_timecode;
 }
+
+int32_t syscall_timestamp(Registers& registers){
+	return current();
+}
+
+void initialize(){
+	register_system_call(syscall_timestamp, SC_timestamp);
+}
+
+};

@@ -30,6 +30,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_gdt_table();
 	initialize_interrupts();
 	initialize_paging();
+	Clock::initialize();
 	com1() << "greetings\n";
 	Thread::initialize();
 
@@ -50,7 +51,6 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	root_directory().add_entry("console", terminal);
 
 	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
-	com1() << "timestamp: " << current_timestamp() << "\n";
 
 	sti();
 	while(true){
