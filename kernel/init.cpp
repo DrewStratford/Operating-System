@@ -14,14 +14,6 @@
 #include <string.h>
 #include <Lock.h>
 
-void foo2(void){
-	sti();
-	while(true){
-		asm("hlt");
-	}
-}
-char foo_stack2[1000];
-
 Thread* userspace_thread = nullptr;
 
 VGATerminal* terminal = nullptr;
@@ -50,11 +42,13 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	root_directory().add_entry("console", terminal);
 
-	Thread thread2((uintptr_t)&foo_stack2[999], (uintptr_t)foo2);
-
+	// From this point onwards other threads may be scheduled
 	sti();
-	while(true){
+
+	// This the idle loop for the whole system and is only run
+	// when there are no runnable threads.
+	while(true)
 		asm("hlt");
-	}
+
 	return 0;
 }

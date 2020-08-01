@@ -8,7 +8,8 @@
 List<Blocker> runnable_threads;
 List<Blocker> dying_threads;
 Thread kernel_thread;
-Thread *current_thread = &kernel_thread;
+Thread* idle_thread = nullptr;
+Thread* current_thread = &kernel_thread;
 
 uint32_t Thread:: tid_allocator = 1;
 
@@ -162,26 +163,33 @@ void Thread::wake_from_list(List<Blocker> &list){
 
 void Thread::yield(){
 
-	if(runnable_threads.is_empty()){
-		com1().write_string("empty yield()\n");
-		return;
-	}
-
 	Thread *old_thread = current_thread;
-	current_thread = runnable_threads.pop()->get_thread();
+
+	// Create a blocker so that we can store this thread
+	// in the runnable threads.
+	Blocker cpu_blocker(old_thread);
+
+	// Note that if we don't have any threads to run we just
+	// resume the kernel thread.
+	current_thread = runnable_threads.is_empty()
+		? &kernel_thread
+		: runnable_threads.pop()->get_thread();
+
 	if(current_thread == old_thread)
 		return;
 
-	Blocker cpu_blocker(old_thread);
-	if(old_thread->get_state() == ThreadState::Running)
+	// If appropriate, store the thread on the runnable threads queue.
+	// Otherwise we assume that another function has properly stored
+	// the thread on a queue.
+	if(old_thread != &kernel_thread && old_thread->get_state() == ThreadState::Running)
 		old_thread->wait_for_cpu(cpu_blocker);
 
 	current_thread->set_state(ThreadState::Running);
 	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
 
-	//set the kernel tss
+	// Set the kernel tss
 	get_tss().esp0 = current_thread->stack_top;
-	//swap into the new threads page directory
+	// Swap into the new threads page directory
 	uintptr_t new_cr3 = v_to_p((uintptr_t)current_thread->get_pdir());
 	set_user_regions(&current_thread->m_user_regions);
 	load_cr3(new_cr3);
