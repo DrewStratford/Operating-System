@@ -34,7 +34,8 @@ public:
 template <typename T>
 class List {
 public:
-	void remove(T* removee){
+
+	void remove(ListNode<T>* removee){
 		if(removee == head)
 			head = removee->next;
 		if(removee == tail)
