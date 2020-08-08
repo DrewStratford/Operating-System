@@ -48,7 +48,8 @@ public:
 	void set_pdir(PTE* new_pdir) { pdir = new_pdir; };
 
 	uint32_t get_tid() { return tid; };
-	uint32_t get_parent_tid() { return parent_tid; };
+	uint32_t get_parent_tid() { return parent->get_tid(); };
+	Thread* get_parent() { return parent; };
 
 	List<Region> m_user_regions;
 
@@ -64,14 +65,17 @@ private:
 	ThreadState state;
 
 	uint32_t tid { 0 };
-	uint32_t parent_tid  { 0 };
+	Thread* parent { nullptr };
 
 	PTE* pdir = nullptr;
 
 	int default_ticks { 5 };
 	int remaining_ticks { 0 };
 
+
 	void wait_for_cpu(Blocker&);
+
+	bool is_ancestor(Thread& thread);
 
 	#define MAX_INODES 20
 	Inode* m_inodes[MAX_INODES] = { nullptr };

@@ -57,8 +57,7 @@ Thread::Thread() {}
 Thread::Thread(uintptr_t stack, uintptr_t start) {
 	NoInterrupts i;
 	tid = tid_allocator++;
-	parent_tid = current_thread->get_tid();
-	com1() << "created thread: tid=" << (int)tid << ", parent tid=" << (int)parent_tid << "\n";
+	parent = current_thread;
 
 	stack_top = stack;
 	stack_ptr = stack;
@@ -78,8 +77,7 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	NoInterrupts d;
 
 	tid = tid_allocator++;
-	parent_tid = current_thread->get_tid();
-	com1() << "created thread: tid=" << (int)tid << ", parent tid=" << (int)parent_tid << "\n";
+	parent = current_thread;
 
 	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0xFFF;
 	stack_ptr = stack_top;
@@ -204,6 +202,16 @@ void Thread::die(){
 	yield();
 }
 
+bool Thread::is_ancestor(Thread& child){
+	Thread* parent = child.get_parent();
+	while(parent != nullptr){
+		if(parent == this)
+			return true;
+		parent = parent->get_parent();
+	}
+	return false;
+}
+
 Inode* Thread::get_inode(int32_t fd){
 	if(fd < 0 || fd >= MAX_INODES)
 		return nullptr;
@@ -310,6 +318,7 @@ int32_t syscall_write_fd(Registers& registers){
 
 	return file->write(buffer, offset, amount);
 }
+
 
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
