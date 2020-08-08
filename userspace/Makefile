@@ -10,6 +10,7 @@ OBJS =\
 	crt0.o	\
 	test.prog	\
 	init.prog	\
+	factorial.prog	\
 	
 
 
