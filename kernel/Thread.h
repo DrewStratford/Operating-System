@@ -30,9 +30,12 @@ public:
 
 	static void switch_thread(Thread& from, Thread& to);
 	static void yield();
-	static void die();
+	void die();
 	static void initialize();
 	static Thread* get_current();
+
+	bool should_die() { return m_should_die; };
+	void mark_for_death() { m_should_die = true; }
 
 	void wait_on_list(List<Blocker>&);
 	static void wake_from_list(List<Blocker>&);
@@ -52,6 +55,7 @@ public:
 	Thread* get_parent() { return parent; };
 
 	List<Region> m_user_regions;
+	List<Thread> waiters;
 
 	Inode* get_inode(int32_t);
 	int32_t insert_inode(Inode*);
@@ -67,11 +71,12 @@ private:
 	uint32_t tid { 0 };
 	Thread* parent { nullptr };
 
+	bool m_should_die { false };
+
 	PTE* pdir = nullptr;
 
 	int default_ticks { 5 };
 	int remaining_ticks { 0 };
-
 
 	void wait_for_cpu(Blocker&);
 

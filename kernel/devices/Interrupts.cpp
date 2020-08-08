@@ -206,6 +206,9 @@ extern "C" void interrupt_handler(Registers registers){
 	IO::out8(0xA0, 0x20);
 	IO::out8(0x20, 0x20);
 
+	if(current_thread->should_die())
+		current_thread->die();
+
 	if(current_thread->get_remaining_ticks() <= 0)
 		Thread::yield();
 }

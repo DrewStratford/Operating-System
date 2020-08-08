@@ -5,6 +5,7 @@
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
 
+List<Thread> all_threads;
 List<Blocker> runnable_threads;
 List<Blocker> dying_threads;
 Thread kernel_thread;
@@ -196,7 +197,7 @@ void Thread::yield(){
 }
 
 void Thread::die(){
-	Blocker death_blocker(current_thread);
+	Blocker death_blocker(this);
 	current_thread->set_state(ThreadState::Dead);
 	dying_threads.insert_end(&death_blocker);
 	yield();
@@ -264,7 +265,7 @@ static int32_t syscall_create_thread(Registers& registers){
 }
 
 static int32_t syscall_exit_thread(Registers& registers){
-	current_thread->die();
+	current_thread->mark_for_death();
 	return -1;
 }
 
