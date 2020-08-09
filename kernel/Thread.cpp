@@ -72,6 +72,8 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert(blocker);
+
+	all_threads.insert(this);
 }
 
 Thread::Thread(File& executable, size_t inode_count, int* inodes){
@@ -133,6 +135,8 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	Blocker* blocker = (Blocker*)stack_ptr;
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert(blocker);
+
+	all_threads.insert(this);
 }
 
 Thread* Thread::get_current(){
@@ -200,7 +204,20 @@ void Thread::die(){
 	Blocker death_blocker(this);
 	current_thread->set_state(ThreadState::Dead);
 	dying_threads.insert_end(&death_blocker);
+
+	// Remove the thread from the all threads list
+	this->remove();
+
 	yield();
+}
+
+Thread* Thread::lookup(int tid){
+
+	for(auto* t = all_threads.peek(); t != nullptr; t = t->next){
+		if(t->get_tid() == tid)
+			return t;
+	}
+	return nullptr;
 }
 
 bool Thread::is_ancestor(Thread& child){

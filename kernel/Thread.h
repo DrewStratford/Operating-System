@@ -28,6 +28,7 @@ public:
 		*(T*)stack_ptr = t;
 	};
 
+	static Thread* lookup(int tid);
 	static void switch_thread(Thread& from, Thread& to);
 	static void yield();
 	void die();
