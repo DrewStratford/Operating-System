@@ -98,3 +98,15 @@ int create_thread(char* cs, size_t inode_count, int* inodes){
 		  [is]"irm"(inodes));
 	return out;
 }
+
+int wait(int thread_id){
+	int32_t out = 0;
+	asm("push %[tid]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x04, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_wait),
+		  [tid]"irm"(thread_id));
+	return out;
+}

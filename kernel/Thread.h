@@ -56,7 +56,7 @@ public:
 	Thread* get_parent() { return parent; };
 
 	List<Region> m_user_regions;
-	List<Thread> waiters;
+	List<Blocker> waiters;
 
 	Inode* get_inode(int32_t);
 	int32_t insert_inode(Inode*);

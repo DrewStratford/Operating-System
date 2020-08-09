@@ -29,7 +29,9 @@ int main(void){
 		strip_newline(buf);
 		int fds[] = { stdfd };
 		int r = create_thread(buf, 1, fds);
-		stream << "r=" << r << "\n";
+		if(r > 0)
+			wait(r);
+
 		prompt(stream);
 	}
 	debug("exiting test\n");

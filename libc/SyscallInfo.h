@@ -13,3 +13,4 @@
 #define SC_read	5
 #define SC_write 6
 #define SC_timestamp 7
+#define SC_wait 8

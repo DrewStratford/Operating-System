@@ -208,6 +208,11 @@ void Thread::die(){
 	// Remove the thread from the all threads list
 	this->remove();
 
+	//wake any waiting threads
+	while(!waiters.is_empty()){
+		wake_from_list(waiters);
+	}
+
 	yield();
 }
 
@@ -275,7 +280,6 @@ static int32_t syscall_create_thread(Registers& registers){
 
 	if(File* f = root_directory().lookup_file(filepath)){
 		Thread *t = new Thread(*f, inode_count, inodes);
-		//TODO: should return new thread id
 		return t->get_tid();
 	}
 	return -1;
@@ -337,6 +341,22 @@ int32_t syscall_write_fd(Registers& registers){
 	return file->write(buffer, offset, amount);
 }
 
+int32_t syscall_wait(Registers& registers){
+	char**stack = (char**)registers.esp;
+	int tid = (int)stack[0];
+
+	if (tid == current_thread->get_tid())
+		return 0;
+
+	if(Thread* waiting_on = Thread::lookup(tid)){
+		com1() << "waiting on " << tid << ", " << waiting_on << "\n";
+		current_thread->wait_on_list(waiting_on->waiters);
+	} else{
+		com1() << "couldn't find the thread\n";
+	}
+
+	return 0;
+}
 
 void Thread::initialize(){
 	//We set up the kernel thread to be the current running thread.
@@ -351,5 +371,6 @@ void Thread::initialize(){
 	register_system_call(syscall_close_file, SC_close_file);
 	register_system_call(syscall_read_fd, SC_read);
 	register_system_call(syscall_write_fd, SC_write);
+	register_system_call(syscall_wait, SC_wait);
 	register_interrupt_callback(tick_callback, 0x20);
 }

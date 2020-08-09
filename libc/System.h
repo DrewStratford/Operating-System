@@ -15,3 +15,4 @@ int write(int fd, void* buffer, size_t offset, size_t count);
 int create_thread(char* cs, size_t inode_count, int* inodes);
 int create_thread(char* cs);
 int32_t get_time();
+int wait(int thread_id);
