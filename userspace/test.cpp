@@ -1,3 +1,4 @@
+#include <Signal.h>
 #include <System.h>
 #include <string.h>
 #include <FileStream.h>
@@ -15,6 +16,8 @@ void strip_newline(char* buffer){
 	}
 }
 
+void callback(void){
+}
 
 int main(void){
 	debug("hello from userspace\n");	
@@ -23,6 +26,9 @@ int main(void){
 	char buf[61];
 	int c = 0;
 
+	signal(SIGINT, (uintptr_t)callback);
+	kill(-1, SIGINT);
+	
 	prompt(stream);
 	while(c = read(stdfd, buf, 0, 60)){
 		buf[c] = '\0';

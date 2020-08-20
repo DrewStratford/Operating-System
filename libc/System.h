@@ -16,3 +16,5 @@ int create_thread(char* cs, size_t inode_count, int* inodes);
 int create_thread(char* cs);
 int32_t get_time();
 int wait(int thread_id);
+int signal(int signal, uintptr_t handler);
+int kill(int tid, int signal);

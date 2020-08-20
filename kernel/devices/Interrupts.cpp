@@ -211,6 +211,8 @@ extern "C" void interrupt_handler(Registers registers){
 
 	if(current_thread->get_remaining_ticks() <= 0)
 		Thread::yield();
+
+	current_thread->handle_signals();
 }
 
 void system_call_handler(Registers& registers){

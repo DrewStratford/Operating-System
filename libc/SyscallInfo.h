@@ -14,3 +14,5 @@
 #define SC_write 6
 #define SC_timestamp 7
 #define SC_wait 8
+#define SC_signal 9
+#define SC_kill 10

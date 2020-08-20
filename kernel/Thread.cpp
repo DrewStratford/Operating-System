@@ -2,7 +2,6 @@
 
 #include <memory/PagingScope.h>
 #include <devices/Serial.h>
-#include <devices/CPU.h>
 #include <devices/Interrupts.h>
 
 List<Thread> all_threads;
@@ -139,6 +138,10 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	all_threads.insert(this);
 }
 
+Registers& Thread::get_registers(){
+	return *(Registers*)stack_top;
+}
+
 Thread* Thread::get_current(){
 	return current_thread;
 }
@@ -198,6 +201,50 @@ void Thread::yield(){
 	load_cr3(new_cr3);
 
 	switch_thread(*old_thread, *current_thread);
+}
+
+SignalDisposition Thread::signal(int signal){
+	if(signal >= SIGMAX)
+		return Ignore;
+
+	auto disposition = sig_handlers[signal].get_disposition();
+	switch(disposition){
+		case Die:
+			mark_for_death();
+			break;
+		case Callback: {
+				com1() << "inserting signal " << signal << "\n";
+				auto sig = new Signal(signal);
+				pending_signals.insert_end(sig);
+				break;
+			}
+		default:
+			break;
+	}
+	return disposition;
+}
+
+void Thread::handle_signals(){
+	if(pending_signals.is_empty())
+		return;
+	
+	Signal* signal = pending_signals.pop();
+	com1() << "setting up signal=" << signal->signal_id << "\n";
+	//TODO: actually set up the signal
+	delete signal;
+}
+
+void Thread::set_handler(int signal, SignalHandler handler){
+	if(signal >= SIGMAX)
+		return;
+	sig_handlers[signal] = handler;
+}
+
+SignalDisposition Thread::send_signal(int tid, int signal){
+	if(Thread* thread = Thread::lookup(tid))
+		return thread->signal(signal);
+
+	return Ignore;
 }
 
 void Thread::die(){
@@ -290,6 +337,28 @@ static int32_t syscall_exit_thread(Registers& registers){
 	return -1;
 }
 
+static int32_t syscall_signal(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t signal = (int32_t)stack[0];
+	uintptr_t callback = (uintptr_t)stack[1];
+	current_thread->set_handler(signal, SignalHandler(callback));
+	com1() << "syscall_signal\n";
+
+	return 0;
+}
+
+static int32_t syscall_kill(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t signal = (int32_t)stack[0];
+	int32_t tid = (int32_t)stack[1];
+	
+	tid = tid == -1 ? current_thread->get_tid() : tid;
+	com1() << "Sending signal to " << tid << "\n";
+	Thread::send_signal(tid, signal);
+
+	return 0;
+}
+
 int32_t syscall_open_file(Registers& registers){
 	char** stack = (char**)registers.esp;
 	char* filepath = stack[0];
@@ -372,5 +441,7 @@ void Thread::initialize(){
 	register_system_call(syscall_read_fd, SC_read);
 	register_system_call(syscall_write_fd, SC_write);
 	register_system_call(syscall_wait, SC_wait);
+	register_system_call(syscall_signal, SC_signal);
+	register_system_call(syscall_kill, SC_kill);
 	register_interrupt_callback(tick_callback, 0x20);
 }

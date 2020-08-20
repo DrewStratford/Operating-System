@@ -110,3 +110,31 @@ int wait(int thread_id){
 		  [tid]"irm"(thread_id));
 	return out;
 }
+
+int kill(int tid, int signal){
+	int32_t out = 0;
+	asm("push %[tid]\n"
+		"push %[sig]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x04, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_kill),
+		  [sig]"irm"(signal),
+		  [tid]"irm"(tid));
+	return out;
+}
+
+int signal(int signal, uintptr_t handler){
+	int32_t out = 0;
+	asm("push %[hndlr]\n"
+		"push %[sig]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x04, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_signal),
+		  [sig]"irm"(signal),
+		  [hndlr]"irm"(handler));
+	return out;
+}

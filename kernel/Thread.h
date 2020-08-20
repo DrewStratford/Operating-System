@@ -2,10 +2,12 @@
 
 #include <stdint.h>
 
+#include <devices/CPU.h>
 #include <filesystem/FileSystem.h>
 #include <memory/Paging.h>
 #include <memory/Region.h>
 #include <data/List.h>
+#include <Signal.h>
 
 enum ThreadState
 	{ Running
@@ -15,6 +17,37 @@ enum ThreadState
 	};
 
 class Blocker;
+
+enum SignalDisposition{
+	Ignore,
+	Die,
+	Callback
+};
+
+class SignalHandler{
+public:
+	SignalHandler(){};
+	SignalHandler(uintptr_t callback){
+		this->disposition = Callback;
+		this->callback = callback;
+	}
+
+	SignalDisposition get_disposition(){
+		return disposition;
+	}
+
+private:
+	SignalDisposition disposition { Die };
+	uintptr_t callback { 0 };
+	uintptr_t alt_stack { 0 };
+};
+
+class Signal : public ListNode<Signal> {
+public:
+	int signal_id = 0;
+	Signal(int signal) : signal_id(signal) {
+	}
+};
 
 class Thread : public ListNode<Thread>{
 public:
@@ -35,6 +68,7 @@ public:
 	static void initialize();
 	static Thread* get_current();
 
+	Registers& get_registers();
 	bool should_die() { return m_should_die; };
 	void mark_for_death() { m_should_die = true; }
 
@@ -63,6 +97,11 @@ public:
 	int32_t open_file(char*);
 	void close_file(int32_t);
 
+	void set_handler(int signal, SignalHandler handler);
+	SignalDisposition signal(int signal);
+	static SignalDisposition send_signal(int tid, int signal);
+	void handle_signals();
+
 private:
 	uintptr_t stack_top { 0 };
 	uintptr_t stack_ptr { 0 };
@@ -86,6 +125,9 @@ private:
 	#define MAX_INODES 20
 	Inode* m_inodes[MAX_INODES] = { nullptr };
 
+	SignalHandler sig_handlers[SIGMAX];
+	List<Signal> pending_signals;
+
 	static uint32_t tid_allocator;
 };
 
@@ -106,5 +148,6 @@ protected:
 	Thread *thread;
 	BlockerStatus status { Waiting };
 };
+
 
 extern Thread *current_thread;
