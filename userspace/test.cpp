@@ -17,6 +17,7 @@ void strip_newline(char* buffer){
 }
 
 void callback(void){
+	debug("------>in the signal handler\n");
 }
 
 int main(void){

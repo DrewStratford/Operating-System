@@ -1,5 +1,7 @@
 #include <Thread.h>
 
+#include <string.h>
+
 #include <memory/PagingScope.h>
 #include <devices/Serial.h>
 #include <devices/Interrupts.h>
@@ -139,7 +141,9 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 }
 
 Registers& Thread::get_registers(){
-	return *(Registers*)stack_top;
+	Registers* rs = (Registers*)stack_top;
+	rs--;
+	return *rs;
 }
 
 Thread* Thread::get_current(){
@@ -212,25 +216,63 @@ SignalDisposition Thread::signal(int signal){
 		case Die:
 			mark_for_death();
 			break;
-		case Callback: {
-				com1() << "inserting signal " << signal << "\n";
-				auto sig = new Signal(signal);
-				pending_signals.insert_end(sig);
-				break;
-			}
+		case Callback:
+			pending_signals.insert_end(new Signal(signal));
+			break;
 		default:
 			break;
 	}
 	return disposition;
 }
 
+static void sig_asm_dummy(){
+	// assumes a pusha followed by return address on
+	// the stack.
+	asm volatile("signal_trampoline:\n"
+		"popa\n"
+		"ret\n"
+		"signal_trampoline_end:\n");
+}
+extern "C" void signal_trampoline();
+extern "C" void signal_trampoline_end();
+
 void Thread::handle_signals(){
 	if(pending_signals.is_empty())
 		return;
 	
 	Signal* signal = pending_signals.pop();
-	com1() << "setting up signal=" << signal->signal_id << "\n";
-	//TODO: actually set up the signal
+	SignalHandler handler = sig_handlers[signal->signal_id];
+
+	auto& regs = get_registers();
+	auto old_eip = regs.eip;
+	auto old_esp = regs.esp;
+	size_t trampoline_size =
+		(size_t)signal_trampoline_end - (size_t)signal_trampoline;
+
+	// load trampoline onto the user stack
+	memcpy((void*)old_esp, (void*)signal_trampoline, trampoline_size);
+	regs.esp-= trampoline_size;
+
+	// return from the trampoline
+	push_on_user_stack<uint32_t>(old_eip);
+
+	// pusha
+	push_on_user_stack<uint32_t>(regs.eax);
+	push_on_user_stack<uint32_t>(regs.ecx);
+	push_on_user_stack<uint32_t>(regs.edx);
+	push_on_user_stack<uint32_t>(regs.ebx);
+	push_on_user_stack<uint32_t>(old_esp);
+	push_on_user_stack<uint32_t>(regs.ebp);
+	push_on_user_stack<uint32_t>(regs.esi);
+	push_on_user_stack<uint32_t>(regs.edi);
+
+	// 'call' the handler
+	regs.eip = handler.get_callback();
+
+	// return from the handler into the
+	// trampoline that's been loaded to the stack
+	push_on_user_stack<uint32_t>(old_esp);
+
 	delete signal;
 }
 
@@ -342,8 +384,6 @@ static int32_t syscall_signal(Registers& registers){
 	int32_t signal = (int32_t)stack[0];
 	uintptr_t callback = (uintptr_t)stack[1];
 	current_thread->set_handler(signal, SignalHandler(callback));
-	com1() << "syscall_signal\n";
-
 	return 0;
 }
 
@@ -353,7 +393,7 @@ static int32_t syscall_kill(Registers& registers){
 	int32_t tid = (int32_t)stack[1];
 	
 	tid = tid == -1 ? current_thread->get_tid() : tid;
-	com1() << "Sending signal to " << tid << "\n";
+	com1() << "Sending signal(" << signal << ") to: " << tid << "\n";
 	Thread::send_signal(tid, signal);
 
 	return 0;

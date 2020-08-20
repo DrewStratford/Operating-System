@@ -32,6 +32,9 @@ public:
 		this->callback = callback;
 	}
 
+	uintptr_t get_callback(){
+		return callback;
+	}
 	SignalDisposition get_disposition(){
 		return disposition;
 	}
@@ -59,6 +62,13 @@ public:
 	void push_on_stack(T t){
 		stack_ptr -= sizeof(T);
 		*(T*)stack_ptr = t;
+	};
+
+	template <typename T>
+	void push_on_user_stack(T t){
+		auto& regs = get_registers();
+		regs.esp -= sizeof(T);
+		*(T*)regs.esp = t;
 	};
 
 	static Thread* lookup(int tid);
