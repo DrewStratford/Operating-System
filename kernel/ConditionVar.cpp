@@ -22,7 +22,7 @@ int ConditionVar::wait(Lock& lock){
 		return -1;
 
 	lock.unlock();
-	current_thread->wait_on_list(m_wait_list);
+	current_thread->wait_on_list<Blocker>(m_wait_list);
 	lock.lock();
 	return 0;
 }

@@ -37,9 +37,9 @@ public:
 
 	void remove(ListNode<T>* removee){
 		if(removee == head)
-			head = removee->next;
+			head = (T*)removee->next;
 		if(removee == tail)
-			tail = removee->previous;
+			tail = (T*)removee->previous;
 		removee->remove_internal();
 	}
 
@@ -60,7 +60,7 @@ public:
 			insert_after(insertee, tail);
 
 		tail = insertee;
-		insertee->container = this;
+		*((List<T>**)&insertee->container) = this;
 	}
 
 	T* pop_end(){
@@ -68,7 +68,7 @@ public:
 			return nullptr;
 
 		T* out = tail;
-		tail = tail->previous;
+		tail = (T*)tail->previous;
 
 		if(tail == nullptr)
 			head = nullptr;
@@ -82,7 +82,7 @@ public:
 			return nullptr;
 
 		T* out = head;
-		head = out->next;
+		head = (T*)out->next;
 
 		if(head == nullptr)
 			tail = nullptr;
@@ -112,7 +112,7 @@ public:
 
 private:
 	static void insert_after(T* insertee, T* before){
-		T* left = before->next;
+		T* left = (T*)before->next;
 
 		insertee->next = left;
 		insertee->previous = before;

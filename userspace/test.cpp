@@ -21,7 +21,7 @@ void callback(void){
 }
 
 int main(void){
-	debug("hello from userspace\n");	
+	debug("hello from userspace\n");
 	int stdfd = 0;
 	FileStream stream(stdfd);
 	char buf[61];
@@ -29,15 +29,14 @@ int main(void){
 
 	signal(SIGINT, (uintptr_t)callback);
 	kill(-1, SIGINT);
-	
+
 	prompt(stream);
 	while(c = read(stdfd, buf, 0, 60)){
 		buf[c] = '\0';
 		strip_newline(buf);
 		int fds[] = { stdfd };
 		int r = create_thread(buf, 1, fds);
-		if(r > 0)
-			wait(r);
+		stream << "ret: " << wait(r) << "\n";
 
 		prompt(stream);
 	}

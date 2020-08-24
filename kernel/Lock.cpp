@@ -8,7 +8,7 @@ void Lock::lock(){
 	NoInterrupts ni;
 
 	while(owner != nullptr){
-		current_thread->wait_on_list(wait_list);	
+		current_thread->wait_on_list<Blocker>(wait_list);
 	}
 	owner = current_thread;
 }

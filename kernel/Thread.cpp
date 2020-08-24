@@ -150,18 +150,29 @@ Thread* Thread::get_current(){
 	return current_thread;
 }
 
+List<Blocker>& Thread::get_runnable_threads(){
+	return runnable_threads;
+}
+
+List<Blocker>& Thread::get_dying_threads(){
+	return dying_threads;
+}
+
 void Thread::wait_for_cpu(Blocker& cpu_blocker){
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert_end(&cpu_blocker);
 }
 
+/*
 void Thread::wait_on_list(List<Blocker> &list){
 	Blocker list_blocker(this);
 	set_state(ThreadState::Blocked);
 	list.insert_end(&list_blocker);
 	yield();
 }
+*/
 
+/*
 void Thread::wake_from_list(List<Blocker> &list){
 	if(list.is_empty())
 		return;
@@ -170,6 +181,7 @@ void Thread::wake_from_list(List<Blocker> &list){
 	blocker->get_thread()->set_state(ThreadState::Runnable);
 	runnable_threads.insert_end(blocker);
 }
+*/
 
 void Thread::yield(){
 
@@ -299,7 +311,9 @@ void Thread::die(){
 
 	//wake any waiting threads
 	while(!waiters.is_empty()){
-		wake_from_list(waiters);
+		auto blocker = waiters.peek();
+		blocker->set_return(223344);
+		wake_from_list<WaitBlocker>(waiters);
 	}
 
 	yield();
@@ -459,12 +473,10 @@ int32_t syscall_wait(Registers& registers){
 
 	if(Thread* waiting_on = Thread::lookup(tid)){
 		com1() << "waiting on " << tid << ", " << waiting_on << "\n";
-		current_thread->wait_on_list(waiting_on->waiters);
-	} else{
-		com1() << "couldn't find the thread\n";
+		return current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters);
 	}
-
-	return 0;
+	com1() << "couldn't find the thread\n";
+	return -1;
 }
 
 void Thread::initialize(){

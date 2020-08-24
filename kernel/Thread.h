@@ -17,6 +17,7 @@ enum ThreadState
 	};
 
 class Blocker;
+class WaitBlocker;
 
 enum SignalDisposition{
 	Ignore,
@@ -82,8 +83,25 @@ public:
 	bool should_die() { return m_should_die; };
 	void mark_for_death() { m_should_die = true; }
 
-	void wait_on_list(List<Blocker>&);
-	static void wake_from_list(List<Blocker>&);
+	template<typename blocker>
+	auto wait_on_list(List<blocker>& list){
+		blocker list_blocker(this);
+		set_state(ThreadState::Blocked);
+		list.insert_end(&list_blocker);
+		yield();
+		return list_blocker.finish();
+	}
+
+	template<typename blocker>
+	static void wake_from_list(List<blocker>& list){
+		if(list.is_empty())
+			return;
+
+		blocker* block = list.pop();
+		block->get_thread()->set_state(ThreadState::Runnable);
+		get_runnable_threads().insert_end((Blocker*)block);
+	};
+
 	ThreadState get_state() const { return state; };
 	void set_state(ThreadState new_state) { state = new_state; };
 
@@ -100,7 +118,7 @@ public:
 	Thread* get_parent() { return parent; };
 
 	List<Region> m_user_regions;
-	List<Blocker> waiters;
+	List<WaitBlocker> waiters;
 
 	Inode* get_inode(int32_t);
 	int32_t insert_inode(Inode*);
@@ -113,6 +131,8 @@ public:
 	void handle_signals();
 
 private:
+	static List<Blocker>& get_runnable_threads();
+	static List<Blocker>& get_dying_threads();
 	uintptr_t stack_top { 0 };
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };
@@ -154,10 +174,19 @@ public:
 	void set_status(BlockerStatus new_status) { status = new_status; };
 	BlockerStatus get_status() { return status; };
 	Thread* get_thread(){ return thread; };
+	void finish(){ return; };
 protected:
 	Thread *thread;
 	BlockerStatus status { Waiting };
 };
 
+class WaitBlocker : public Blocker{
+public:
+	WaitBlocker(Thread* t) : Blocker(t) {};
+	void set_return(int ret){ ret_val = ret; };
+	int finish(){ return ret_val; };
+private:
+	int ret_val { 0 };
+};
 
 extern Thread *current_thread;
