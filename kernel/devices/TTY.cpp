@@ -1,6 +1,8 @@
+#include <string.h>
+
 #include <devices/TTY.h>
 #include <devices/IO.h>
-#include <string.h>
+#include <Thread.h>
 
 static inline uint8_t vga_entry_colour(uint8_t fg, uint8_t bg) {
 	return fg | bg << 4;
@@ -160,29 +162,40 @@ void VGATerminal::backspace(){
 	}
 }
 
+// Note that we yield after any wake().
+// This is because the waiting thread is probably a UI thread
+// with a decently high priority; so, we should switch to it
+// avoiding line buffering issues.
 void VGATerminal::emit(char c){
+	auto place_in_buffer = [this](char p){
+		ScopedLocker locker(&m_lock);
+		m_data.insert_end(p);
+	};
+
 	switch(c){
 		case '\0':
 			break;
 		case '\n':
 			putchar('\n');
-			m_data.insert_end('\n');
+			place_in_buffer('\n');
 			line_count++;
 			m_cvar.wake();
+			Thread::yield();
 			break;
 		case '\b':
 			putchar('\b');
 			break;
 		//handle ^D
 		case 0x04:
-			m_data.insert_end('\0');
+			place_in_buffer('\0');
 			line_count++;
 			m_cvar.wake();
+			Thread::yield();
 			break;
 
 		default:
 			putchar(c);
-			m_data.insert_end(c);
+			place_in_buffer(c);
 			break;
 	}
 	update_cursor();
@@ -191,7 +204,6 @@ void VGATerminal::emit(char c){
 // This provides input to the data queue. The data is also echoed to the
 // screen.
 void VGATerminal::input(char* cs, size_t amount){
-	ScopedLocker locker(&m_lock);
 	for(int i = 0; i < amount; i++)
 		emit(cs[i]);
 
