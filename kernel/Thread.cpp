@@ -226,7 +226,7 @@ SignalDisposition Thread::signal(int signal){
 	auto disposition = sig_handlers[signal].get_disposition();
 	switch(disposition){
 		case Die:
-			mark_for_death();
+			mark_for_death(-1);
 			break;
 		case Callback:
 			pending_signals.insert_end(new Signal(signal));
@@ -312,7 +312,7 @@ void Thread::die(){
 	//wake any waiting threads
 	while(!waiters.is_empty()){
 		auto blocker = waiters.peek();
-		blocker->set_return(223344);
+		blocker->set_return(current_thread->exit_status());
 		wake_from_list<WaitBlocker>(waiters);
 	}
 
@@ -389,7 +389,9 @@ static int32_t syscall_create_thread(Registers& registers){
 }
 
 static int32_t syscall_exit_thread(Registers& registers){
-	current_thread->mark_for_death();
+	void** stack = (void**)registers.esp;
+	int ret_val = (int)stack[0];
+	current_thread->mark_for_death(ret_val);
 	return -1;
 }
 

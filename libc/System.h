@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <SyscallInfo.h>
 
-int exit();
+int exit(int);
 
 int debug(char*);
 

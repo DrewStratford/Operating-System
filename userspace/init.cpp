@@ -10,7 +10,6 @@ int main(void){
 	write(console, init_message, 0, strlen(init_message));
 	int fds[] = { console };
 	create_thread("vfs/test.prog", 1, fds );
-	exit();
 	return 0;
 }
 

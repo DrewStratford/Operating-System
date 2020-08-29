@@ -81,7 +81,11 @@ public:
 
 	Registers& get_registers();
 	bool should_die() { return m_should_die; };
-	void mark_for_death() { m_should_die = true; }
+	int exit_status() { return m_exit_status; };
+	void mark_for_death(int ret) {
+		m_should_die = true;
+		m_exit_status = ret;
+	}
 
 	template<typename blocker>
 	auto wait_on_list(List<blocker>& list){
@@ -142,6 +146,7 @@ private:
 	Thread* parent { nullptr };
 
 	bool m_should_die { false };
+	int m_exit_status { 0 };
 
 	PTE* pdir = nullptr;
 

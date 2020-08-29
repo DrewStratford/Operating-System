@@ -9,10 +9,11 @@ int debug(char* cs){
 	return 0;
 }
 
-int exit(){
-	asm("mov %[no], %%eax\n"
+int exit(int code){
+	asm("push %[c]\n"
+		"mov %[no], %%eax\n"
 		"int $0x80\n"
-		:: [no]"i"(SC_exit_thread));
+		:: [c]"irm"(code), [no]"i"(SC_exit_thread));
 	return 0;
 }
 

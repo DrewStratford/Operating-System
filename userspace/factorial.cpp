@@ -13,6 +13,6 @@ int main(void){
 	FileStream stream(stdfd);
 	
 	stream << "factorial(5)=" << factorial(5) << "\n";
-	exit();
+	exit(factorial(5));
 	return 0;
 }

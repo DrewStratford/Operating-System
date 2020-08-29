@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 // This file provides both: The syscall number, and argument structure for 
 // a given syscall.
 

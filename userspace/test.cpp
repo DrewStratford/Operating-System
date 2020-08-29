@@ -41,6 +41,5 @@ int main(void){
 		prompt(stream);
 	}
 	debug("exiting test\n");
-	exit();
 	return 0;
 }
