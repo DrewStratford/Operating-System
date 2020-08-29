@@ -180,13 +180,14 @@ void initialize_interrupts(){
 	asm("lidt %0\n" ::"m"(idtr));
 	com1().write_string("initialized IDT\n");
 
-	//start the pit
+	//start the pit as rate generator(mode 2)
 	IO::out8(0x43, 0b00110100);
 
-	//This timing is pretty arbitrary, it's only set
-	// to be fast enough that the keyboard isn't laggy.
-	IO::out8(0x40, 250);
-	IO::out8(0x40, 10);
+	// set timing to about 40Hz or every 25ms
+	// so every four ticks is 0.1 seconds
+	IO::out8(0x40, 0x86);
+	IO::out8(0x40, 0x74);
+
 }
 
 void register_interrupt_callback(InterruptCallback callback, size_t no){

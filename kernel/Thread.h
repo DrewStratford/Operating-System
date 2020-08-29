@@ -150,7 +150,7 @@ private:
 
 	PTE* pdir = nullptr;
 
-	int default_ticks { 5 };
+	int default_ticks { 4 };
 	int remaining_ticks { 0 };
 
 	void wait_for_cpu(Blocker&);
