@@ -474,10 +474,8 @@ int32_t syscall_wait(Registers& registers){
 		return 0;
 
 	if(Thread* waiting_on = Thread::lookup(tid)){
-		com1() << "waiting on " << tid << ", " << waiting_on << "\n";
 		return current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters);
 	}
-	com1() << "couldn't find the thread\n";
 	return -1;
 }
 
