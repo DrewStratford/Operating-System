@@ -23,6 +23,8 @@ public:
 	void backspace();
 	bool can_backspace();
 
+	void clear_screen();
+
 private:
 	int x { 0 };
 	int y { 0 };
@@ -42,6 +44,8 @@ private:
 	void draw_at(int x, int y, char);
 	void draw_at(size_t index, uint16_t);
 	void update_cursor();
+
+	bool m_escape { false };
 
 	Vector<char> m_data;
 	Lock m_lock;

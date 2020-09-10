@@ -118,7 +118,7 @@ size_t VGATerminal::read(char* cs, size_t offset, size_t amount){
 	ScopedLocker locker(&m_lock);
 	while(line_count < 1)
 		m_cvar.wait(m_lock);
-	
+
 	size_t out = 0;
 	for(; out < amount && !m_data.is_empty(); out++){
 		char c = m_data.remove_front();
@@ -131,7 +131,7 @@ size_t VGATerminal::read(char* cs, size_t offset, size_t amount){
 			out++;
 			break;
 		}
-			
+
 		cs[out] = c;
 	}
 
@@ -162,6 +162,14 @@ void VGATerminal::backspace(){
 	}
 }
 
+void VGATerminal::clear_screen(){
+	int old_x = x;
+	while(y > 0)
+		scroll_up();
+	x = old_x;
+	update_cursor();
+}
+
 // Note that we yield after any wake().
 // This is because the waiting thread is probably a UI thread
 // with a decently high priority; so, we should switch to it
@@ -172,6 +180,16 @@ void VGATerminal::emit(char c){
 		m_data.insert_end(p);
 	};
 
+	if(m_escape){
+		switch(c){
+			case 'l':
+				clear_screen();
+				break;
+
+		}
+		m_escape = false;
+		return;
+	}
 	switch(c){
 		case '\0':
 			break;
@@ -191,6 +209,9 @@ void VGATerminal::emit(char c){
 			line_count++;
 			m_cvar.wake();
 			Thread::yield();
+			break;
+		case 0x1b:
+			m_escape = true;
 			break;
 
 		default:
