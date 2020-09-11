@@ -1,9 +1,11 @@
 #include <memory/Region.h>
 #include <devices/Serial.h>
 #include <devices/CPU.h>
+#include <Thread.h>
+#include <Signal.h>
 
 
-Region::Region(char* description, uint32_t start, uint32_t size) 
+Region::Region(char* description, uint32_t start, uint32_t size)
 	: description(description), start(start), size(size){
 }
 
@@ -47,6 +49,12 @@ void UserRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	}
 }
 
+void send_segfault(){
+	if(Thread* current = Thread::get_current()){
+		current->signal(SIGSEGV);
+	}
+}
+
 void KernelRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	com1() << *this << " handling KernelRegion fault " << (void*)addr << "\n";
 
@@ -57,6 +65,7 @@ void KernelRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 			break;
 		case UserWriteNP:
 		case UserReadNP:
+			send_segfault();
 			panic("paging: userspace fault\n");
 			break;
 		default:
@@ -70,11 +79,19 @@ GuardRegion::GuardRegion(uintptr_t start, uintptr_t end)
 
 void GuardRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
 	com1() << "fault in GuardRegion: " << (void*)addr << "\n";
-	panic("");
+	switch(fault_type){
+		case UserWriteNP:
+		case UserReadNP:
+			send_segfault();
+			break;
+		default:
+			panic("");
+			break;
+	}
 }
 
 OutStream& operator<<(OutStream& stream, Region const& reg){
-	stream << "Region: " << reg.get_description() << ", start: " 
+	stream << "Region: " << reg.get_description() << ", start: "
 			<< (void*)reg.get_start() << ", end: " << (void*)reg.end();
 	return stream;
 }

@@ -11,6 +11,7 @@ OBJS =\
 	test.prog	\
 	init.prog	\
 	factorial.prog	\
+	segfault.prog	\
 	
 
 
