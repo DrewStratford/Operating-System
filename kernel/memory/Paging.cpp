@@ -1,3 +1,4 @@
+#include <data/Bitmap.h>
 #include <memory/Paging.h>
 #include <memory/Region.h>
 #include <memory/Heap.h>
@@ -8,6 +9,10 @@
 #include <devices/CPU.h>
 #include <devices/Interrupts.h>
 #include <devices/Serial.h>
+
+// There are 1024 * 1024 pages
+const size_t BITMAP_SIZE = 1024*1024;
+Bitmap<BITMAP_SIZE> page_bitmap;
 
 alignas(0x1000) PTE init_page_directory[1024];
 alignas(0x1000) PTE init_page_table[1024];
@@ -125,6 +130,13 @@ void initialize_paging(){
 	recursive_mapping.writable = true;
 	recursive_mapping.present = true;
 
+	// TODO + LIKELY TO CAUSE BUGS:
+	// Here we pre allocate the first 4MiB in the bitmap
+	// to avoid re allocating early memory stuff. this should be done better.
+	for(auto i = 0; i < (0x400*0x1000); i += 0x1000){
+		page_bitmap.set(i / 0x1000);
+	}
+
 	enable_paging(reinterpret_cast<uintptr_t>(init_page_directory));
 
 	// Map in the first 1 GiB of page tables for use by the kernel.
@@ -227,16 +239,12 @@ void initialize_page_directory(PTE* directory){
 	recursive_mapping.present = true;
 }
 
-// For the mean time, we just use a watermark allocator.
-// This is exceedingly simple, but lacks the abillity to
-// free pages.
 void* allocate_physical_page(){
-	static void* level = (void*)(0x400 * 0x1000);
-	void* out = level;
-	level += 0x1000;
-	return out;
+	size_t idx = page_bitmap.find_free();
+	page_bitmap.set(idx);
+	return (void*)(idx * 0x1000);
 }
 
 void free_physical_page(void* page){
-	// Do nothing.
+	page_bitmap.clear((size_t)page/0x1000);
 }
