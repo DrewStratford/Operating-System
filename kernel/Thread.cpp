@@ -191,26 +191,6 @@ void Thread::wait_for_cpu(Blocker& cpu_blocker){
 	runnable_threads.insert_end(&cpu_blocker);
 }
 
-/*
-void Thread::wait_on_list(List<Blocker> &list){
-	Blocker list_blocker(this);
-	set_state(ThreadState::Blocked);
-	list.insert_end(&list_blocker);
-	yield();
-}
-*/
-
-/*
-void Thread::wake_from_list(List<Blocker> &list){
-	if(list.is_empty())
-		return;
-
-	Blocker *blocker = list.pop();
-	blocker->get_thread()->set_state(ThreadState::Runnable);
-	runnable_threads.insert_end(blocker);
-}
-*/
-
 void Thread::yield(){
 
 	Thread *old_thread = current_thread;
@@ -439,7 +419,7 @@ static int32_t syscall_kill(Registers& registers){
 	char** stack = (char**)registers.esp;
 	int32_t signal = (int32_t)stack[0];
 	int32_t tid = (int32_t)stack[1];
-	
+
 	tid = tid == -1 ? current_thread->get_tid() : tid;
 	com1() << "Sending signal(" << signal << ") to: " << tid << "\n";
 	Thread::send_signal(tid, signal);
