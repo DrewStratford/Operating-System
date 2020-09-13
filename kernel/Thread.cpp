@@ -83,7 +83,8 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	tid = tid_allocator++;
 	parent = current_thread;
 
-	stack_top = (uintptr_t)kmemalign(0x1000, 0x1000) + 0xFFF;
+	stack_bottom = (uintptr_t)kmemalign(0x1000,0x1000);
+	stack_top = stack_bottom + 0xFFF;
 	stack_ptr = stack_top;
 	resume_ptr = (uintptr_t)user_thread_trampoline;
 
@@ -138,6 +139,33 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	runnable_threads.insert(blocker);
 
 	all_threads.insert(this);
+}
+
+// As this deletes the Thread's context, it is important that we don't
+// run this while `this` is the current thread.
+Thread::~Thread(){
+	if(this == current_thread)
+		panic("destructing the current thread!");
+
+	com1() << "deleting Thread(" << (int)tid << ")\n";
+	//remove from the threads list
+	this->remove();
+
+	//TODO: handle inodes somehow
+	kfree((void*)stack_bottom);
+
+	// Delete any pending signals
+	for(auto* s = pending_signals.pop(); s; s = pending_signals.pop())
+		delete s;
+
+	{
+		PagingScope scope(*this);
+		// Delete all the user regions.
+		for(auto* r = m_user_regions.pop(); r; r = m_user_regions.pop())
+			delete r;
+	}
+
+	delete_page_directory(get_pdir());
 }
 
 Registers& Thread::get_registers(){
@@ -251,7 +279,7 @@ extern "C" void signal_trampoline_end();
 void Thread::handle_signals(){
 	if(pending_signals.is_empty())
 		return;
-	
+
 	Signal* signal = pending_signals.pop();
 	SignalHandler handler = sig_handlers[signal->signal_id];
 
@@ -373,6 +401,10 @@ void Thread::close_file(int32_t i){
 static void tick_callback(Registers& registers){
 	int ticks = current_thread->get_remaining_ticks();
 	current_thread->set_remaining_ticks(ticks-1);
+
+	// Delete any dying threads.
+	for(auto* b = dying_threads.pop(); b; b = dying_threads.pop())
+		delete b->get_thread();
 }
 
 static int32_t syscall_create_thread(Registers& registers){

@@ -17,6 +17,12 @@ UserRegion::UserRegion(uint32_t start, uint32_t size)
 	: Region("anonymous", start, size) {
 }
 
+UserRegion::~UserRegion(){
+	for(auto addr = get_start(); addr < end(); addr += 0x1000){
+		free_page_entry(addr);
+	}
+}
+
 KernelRegion::KernelRegion(char* description, uint32_t start, uint32_t size)
 	: Region(description, start, size) {
 }

@@ -59,6 +59,8 @@ public:
 	Thread(uintptr_t stack, uintptr_t resume);
 	Thread(File&, size_t inode_count, int* inodes);
 
+	~Thread();
+
 	template <typename T>
 	void push_on_stack(T t){
 		stack_ptr -= sizeof(T);
@@ -137,6 +139,7 @@ public:
 private:
 	static List<Blocker>& get_runnable_threads();
 	static List<Blocker>& get_dying_threads();
+	uintptr_t stack_bottom { 0 };
 	uintptr_t stack_top { 0 };
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };

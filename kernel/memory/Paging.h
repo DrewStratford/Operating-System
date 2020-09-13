@@ -56,7 +56,10 @@ PTE& lookup_page_table(uintptr_t address);
 PTE& lookup_page_entry(uintptr_t address);
 uintptr_t v_to_p(uintptr_t address);
 bool map_page(uintptr_t address, bool is_userspace);
+void free_page_entry(uintptr_t address);
+bool is_page_present(uintptr_t address);
 
 void initialize_page_directory(PTE*);
+void delete_page_directory(PTE*);
 void* allocate_physical_page();
 void free_physical_page(void* page);

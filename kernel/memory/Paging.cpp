@@ -188,6 +188,19 @@ uintptr_t v_to_p(uintptr_t address){
 	return lookup_page_entry(address).get_address();
 }
 
+bool is_page_present(uintptr_t address){
+	PTE& table = lookup_page_table(address);
+	return table.present && lookup_page_entry(address).present;
+}
+
+void free_page_entry(uintptr_t address){
+	if(!is_page_present(address)) return;
+
+	PTE& page = lookup_page_entry(address);
+	free_physical_page((void*)page.get_address());
+	page = PTE();
+}
+
 static void create_page_table(uintptr_t address, bool is_userspace){
 	uintptr_t table_physical = (uintptr_t)allocate_physical_page();
 	PTE& entry = lookup_page_table(address);
@@ -237,6 +250,23 @@ void initialize_page_directory(PTE* directory){
 	recursive_mapping.userspace = true;
 	recursive_mapping.writable = true;
 	recursive_mapping.present = true;
+}
+
+// Frees the physical pages used to store the user page
+// tables
+void delete_page_directory(PTE* directory){
+	// We delete all the userpace tables, but
+	// ignore the kernel and recursive mapping.
+	for(size_t i = 256; i < 1023; i++){
+		PTE& table = directory[i];
+		if(!table.present)
+			continue;
+
+		free_physical_page((void*)table.get_address());
+		table.present = false;
+	}
+
+	kfree(directory);
 }
 
 void* allocate_physical_page(){

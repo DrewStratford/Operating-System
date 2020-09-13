@@ -7,6 +7,8 @@
 
 class Region : public ListNode<Region>{
 public:
+
+	virtual ~Region(){ };
 	const uintptr_t get_start() const { return start; };
 	char* get_description() const { return description; };
 	const uintptr_t end() const ;
@@ -31,6 +33,7 @@ public:
 
 class UserRegion : public Region {
 public:
+	~UserRegion();
 	UserRegion(char* description, uintptr_t start, uintptr_t end);
 	UserRegion(uintptr_t start, uintptr_t end);
 
