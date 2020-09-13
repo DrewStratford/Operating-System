@@ -382,9 +382,19 @@ static void tick_callback(Registers& registers){
 	int ticks = current_thread->get_remaining_ticks();
 	current_thread->set_remaining_ticks(ticks-1);
 
-	// Delete any dying threads.
+	// Delete any reapable threads.
+	List<Blocker> reaping;
 	for(auto* b = dying_threads.pop(); b; b = dying_threads.pop())
-		delete b->get_thread();
+		reaping.insert(b);
+
+	for(auto* b = reaping.pop(); b; b = reaping.pop()){
+		Thread* thr = b->get_thread();
+
+		if(thr->get_state() == ThreadState::Reaped)
+			delete b->get_thread();
+		else
+			dying_threads.insert(b);
+	}
 }
 
 static int32_t syscall_create_thread(Registers& registers){
@@ -486,7 +496,13 @@ int32_t syscall_wait(Registers& registers){
 		return 0;
 
 	if(Thread* waiting_on = Thread::lookup(tid)){
-		return current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters);
+		auto state = waiting_on->get_state();
+		if(state != ThreadState::Dead && state != ThreadState::Reaped)
+			current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters);
+
+		// Mark as reaped so that we can
+		waiting_on->set_state(ThreadState::Reaped);
+		return waiting_on->exit_status();
 	}
 	return -1;
 }

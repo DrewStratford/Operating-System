@@ -14,6 +14,7 @@ enum ThreadState
 	, Runnable
 	, Blocked
 	, Dead
+	, Reaped
 	};
 
 class Blocker;
