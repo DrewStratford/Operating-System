@@ -4,11 +4,18 @@
 #include <stdint.h>
 
 #include <data/List.h>
+#include <devices/CPU.h>
+
+enum FreeNodeState{
+	Invalid,
+	Free,
+	Allocated
+};
 
 class [[gnu::packed]] FreeNode{
 
 public:
-	int32_t magic { 0xfeed };
+	FreeNodeState magic { Free };
 	size_t m_size { 0 };
 	FreeNode* m_next { nullptr };
 	FreeNode* m_previous { nullptr };
@@ -73,11 +80,25 @@ public:
 	void remove(){
 		if(m_next == nullptr || m_previous == nullptr)
 			return;
+		if(magic == Allocated)
+			panic("removing already allocted node");
 
 		m_previous->m_next = m_next;
 		m_next->m_previous = m_previous;
 		m_previous = nullptr;
 		m_next = nullptr;
+		magic = Allocated;
+	}
+
+	// Merges with the next node if appropriate
+	void merge(){
+		if(end() != (size_t)m_next)
+			return;
+
+		m_next->magic = Invalid;
+		m_size += sizeof(FreeNode) + m_next->m_size;
+		m_next = m_next->m_next;
+		m_next->m_previous = this;
 	}
 };
 

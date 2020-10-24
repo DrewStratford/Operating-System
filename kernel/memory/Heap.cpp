@@ -30,10 +30,6 @@ void* kmalloc(size_t size){
 		if(node->split(size)){
 			node->remove();
 
-			if(node->magic == 0xbeef)
-				panic("already 0xbeef");
-
-			node->magic = 0xbeef;
 			return (void*)node->start();
 		}
 	}
@@ -63,11 +59,6 @@ void* kmemalign(size_t alignment, size_t size){
 	for(FreeNode* node = free_nodes; node != nullptr; node = node->m_next){
 		if(node->split_align(size, alignment)){
 			node->remove();
-			com1() << "kmemalign: " << (void*) node->start() << ", " << (void*)node->end() << ", " << (void*)node->magic << "\n";
-			if(node->magic == 0xbeef){
-				panic("already 0xbeef");
-			}
-			node->magic = 0xbeef;
 			return (void*)node->start();
 		}
 	}
@@ -77,10 +68,10 @@ void* kmemalign(size_t alignment, size_t size){
 void kfree(void* ptr){
 	FreeNode* free = (FreeNode*)(ptr - sizeof(FreeNode));
 
-	if(free->magic == 0xfeed)
+	if(free->magic == Free)
 		panic("kfree: freeing free memory!");
 
-	if(free->magic != 0xbeef){
+	if(free->magic != Allocated){
 		com1() << "kfree: trying to free unmanaged memory!\n";
 		return;
 	}
@@ -94,7 +85,14 @@ void kfree(void* ptr){
 
 			next->m_previous = free;
 			tmp->m_next = free;
-			free->magic = 0xfeed;
+			free->magic = Free;
+
+			// merge nodes for defragmentation
+			if(free->m_next != &end_node)
+				free->merge();
+			if(free->m_previous != &start_node)
+				free->m_previous->merge();
+
 			return;
 		}
 	}
