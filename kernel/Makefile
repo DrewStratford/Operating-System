@@ -22,7 +22,6 @@ devices/Clock.o \
 memory/Paging.o	\
 memory/PagingScope.o	\
 memory/Region.o	\
-memory/Heap.o	\
 filesystem/FileSystem.o	\
 
 all: os.iso

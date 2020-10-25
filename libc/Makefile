@@ -13,18 +13,19 @@ FileStream.o \
 Time.o \
 icxxabi.o \
 System.o \
+Malloc.o \
 
 KOBJS =$(OBJS:%.o=%.k.o)
 UOBJS =$(OBJS:%.o=%.u.o)
 
 %.u.o : %.cpp
-	$(CC) -D KERNEL_SPACE -c $(CPPFLAGS) $< -o $@
+	$(CC) -D USER_SPACE -c $(CPPFLAGS) $< -o $@
 
 %.u.o : %.asm
 	nasm -f elf32 $< -o $@
 
 %.k.o : %.cpp
-	$(CC) -D USER_SPACE -c $(CPPFLAGS) $< -o $@
+	$(CC) -D KERNEL_SPACE -c $(CPPFLAGS) $< -o $@
 
 %.k.o : %.asm
 	nasm -f elf32 $< -o $@

@@ -1,7 +1,6 @@
 #include <data/Bitmap.h>
 #include <memory/Paging.h>
 #include <memory/Region.h>
-#include <memory/Heap.h>
 
 #include <string.h>
 

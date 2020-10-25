@@ -1,6 +1,5 @@
-#include <memory/Heap.h>
-#include <devices/Serial.h>
-#include <devices/CPU.h>
+#include <Malloc.h>
+
 
 FreeNode* free_nodes = nullptr;
 FreeNode end_node = FreeNode(0);
@@ -72,7 +71,7 @@ void kfree(void* ptr){
 		panic("kfree: freeing free memory!");
 
 	if(free->magic != Allocated){
-		com1() << "kfree: trying to free unmanaged memory!\n";
+		//com1() << "kfree: trying to free unmanaged memory!\n";
 		return;
 	}
 
@@ -96,7 +95,7 @@ void kfree(void* ptr){
 			return;
 		}
 	}
-	com1() << "couldn't free " << ptr << "\n";
+	//com1() << "couldn't free " << ptr << "\n";
 	panic("");
 }
 
@@ -120,3 +119,4 @@ void operator delete(void* ptr, size_t size){
 void operator delete[](void* ptr, size_t size){
 	kfree(ptr);
 }
+

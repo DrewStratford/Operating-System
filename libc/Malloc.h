@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 #include <data/List.h>
-#include <devices/CPU.h>
+
+extern void panic(char*);
 
 enum FreeNodeState{
 	Invalid,

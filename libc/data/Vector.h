@@ -1,7 +1,7 @@
 #pragma once
 
 #include <devices/Serial.h>
-#include <memory/Heap.h>
+#include <Malloc.h>
 #include <cstddef>
 
 template<typename T>

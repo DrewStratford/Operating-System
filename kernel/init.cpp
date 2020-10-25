@@ -9,7 +9,7 @@
 #include <devices/TTY.h>
 #include <devices/Clock.h>
 #include <memory/Paging.h>
-#include <memory/Heap.h>
+#include <Malloc.h>
 #include <filesystem/FileSystem.h>
 #include <string.h>
 #include <Lock.h>
