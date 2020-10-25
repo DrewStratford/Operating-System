@@ -2,7 +2,7 @@ ENTRY(_start)
 OUTPUT_FORMAT(binary)
 OUTPUT(a.out)
 STARTUP(crt0.o)
-INPUT(../libc/libk.a)
+INPUT(../libc/libc.a)
 
 base = 0x40000000;
 SECTIONS

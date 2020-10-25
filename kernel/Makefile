@@ -28,7 +28,8 @@ filesystem/FileSystem.o	\
 all: os.iso
 
 libc:
-	make -C ../libc
+	make -C ../libc libk.a
+	make -C ../libc libc.a
 
 userspace:
 	make -C ../userspace

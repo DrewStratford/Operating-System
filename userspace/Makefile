@@ -18,7 +18,7 @@ OBJS =\
 all: $(OBJS)
 
 libc:
-	make -C ../libc
+	make -C ../libc libc.a
 
 crt0.o : crt0.S
 	$(CC) -c $(CPPFLAGS) $< -o $@

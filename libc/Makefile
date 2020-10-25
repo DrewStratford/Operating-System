@@ -14,14 +14,26 @@ Time.o \
 icxxabi.o \
 System.o \
 
-%.o : %.cpp
-	$(CC) -c $(CPPFLAGS) $< -o $@
+KOBJS =$(OBJS:%.o=%.k.o)
+UOBJS =$(OBJS:%.o=%.u.o)
 
-%.o : %.asm
+%.u.o : %.cpp
+	$(CC) -D KERNEL_SPACE -c $(CPPFLAGS) $< -o $@
+
+%.u.o : %.asm
 	nasm -f elf32 $< -o $@
 
-libk.a: $(OBJS)
-	ar rcs $@ $(OBJS)
+%.k.o : %.cpp
+	$(CC) -D USER_SPACE -c $(CPPFLAGS) $< -o $@
+
+%.k.o : %.asm
+	nasm -f elf32 $< -o $@
+
+libk.a: $(KOBJS)
+	ar rcs $@ $(KOBJS)
+
+libc.a: $(UOBJS)
+	ar rcs $@ $(UOBJS)
 
 clean:
 	rm -f *.a
