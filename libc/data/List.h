@@ -28,7 +28,7 @@ public:
 	friend class List<T>;
 	T* previous { nullptr };
 	T* next { nullptr };
-	List<T>* container;
+	List<T>* container { nullptr};
 };
 
 template <typename T>
