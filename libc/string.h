@@ -27,6 +27,8 @@ public:
 	string(const string&);
 	~string();
 
+	string& operator=(const string&);
+	string& operator=(const char*);
 	string append(const string&) const;
 	string substring(int start) const;
 	string substring(int start, int end) const;
@@ -37,9 +39,6 @@ public:
 	int index_of(char c);
 
 	size_t length() const;
-
-	string& operator=(const char*);
-
 };
 
 OutStream& operator<<(OutStream&, string&);

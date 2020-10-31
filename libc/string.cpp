@@ -71,19 +71,37 @@ string::string(const char* str){
 	m_size = strlen(str) + 1;
 	m_str = new char[m_size];
 	memcpy(m_str, (const void*)str, m_size);
+	m_str[m_size - 1] = '\0';
 }
 
 string::string(const char* string, int size){
 	m_size = size + 1;
 	m_str = new char[m_size];
 	memcpy(m_str, string, m_size);
-	m_str[m_size] = '\0';
+	m_str[m_size - 1] = '\0';
 }
 
 string::string(const string& str){
 	m_size = str.length() + 1;
 	m_str = new char[m_size];
 	memcpy(m_str, str.m_str, m_size);
+	m_str[m_size - 1] = '\0';
+}
+
+string& string::operator=(const string& str){
+	m_size = str.length() + 1;
+	m_str = new char[m_size];
+	memcpy(m_str, str.m_str, m_size);
+	m_str[m_size - 1] = '\0';
+	return *this;
+}
+
+string& string::operator=(const char* str){
+	m_size = strlen(str) + 1;
+	m_str = new char[m_size];
+	memcpy(m_str, (const void*)str, m_size);
+	m_str[m_size - 1] = '\0';
+	return *this;
 }
 
 string string::append(const string& str) const{
