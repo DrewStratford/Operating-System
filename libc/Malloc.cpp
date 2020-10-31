@@ -80,6 +80,10 @@ bool heap_valid(void* ptr){
 
 
 void kfree(void* ptr){
+
+	if(ptr == nullptr)
+		return;
+
 	FreeNode* free = (FreeNode*)(ptr - sizeof(FreeNode));
 
 	if(free->magic == Free)
