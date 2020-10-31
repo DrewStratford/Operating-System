@@ -1,5 +1,13 @@
 #include <Malloc.h>
 
+#ifdef USER_SPACE
+// Hacky, but we need this defined so that the userspace
+// libc will compile. In the future we should introduce
+// a proper userspace panic.
+void panic(char*){
+	return;
+}
+#endif
 
 FreeNode* free_nodes = nullptr;
 FreeNode end_node = FreeNode(0);
@@ -115,7 +123,9 @@ void operator delete(void* ptr, size_t size){
 	kfree(ptr);
 }
 
-
+void operator delete[](void* ptr){
+	kfree(ptr);
+}
 void operator delete[](void* ptr, size_t size){
 	kfree(ptr);
 }

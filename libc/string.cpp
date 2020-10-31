@@ -61,3 +61,84 @@ int strcmp(const void *s1, const void * s2){
 	}
 	return 0;
 }
+
+string::~string(){
+	if(m_str)
+		delete[] m_str;
+}
+
+string::string(const char* str){
+	m_size = strlen(str) + 1;
+	m_str = new char[m_size];
+	memcpy(m_str, (const void*)str, m_size);
+}
+
+string::string(const char* string, int size){
+	m_size = size + 1;
+	m_str = new char[m_size];
+	memcpy(m_str, string, m_size);
+	m_str[m_size] = '\0';
+}
+
+string::string(const string& str){
+	m_size = str.length() + 1;
+	m_str = new char[m_size];
+	memcpy(m_str, str.m_str, m_size);
+}
+
+string string::append(const string& str) const{
+	auto new_size = this->length() + str.length() + 1;
+	char* new_c_str = new char[new_size];
+	memcpy(new_c_str, (const void*)this->m_str, this->length());
+	memcpy(new_c_str + this->length(), str.m_str, str.length());
+	new_c_str[new_size-1] = '\0';
+
+	return string(new_c_str);
+}
+
+string string::substring(int start, int size) const{
+	if(start < 0)
+		return string(*this);
+	if(length() < start)
+		return string("");
+
+	int to_end = length() - start;
+	size = to_end < size ? to_end : size;
+	return string(&m_str[start], size);
+}
+
+string string::substring(int start) const{
+	int to_end = length() - start;
+	return substring(start, to_end);
+}
+
+char string::at(size_t i){
+	return m_str[i];
+}
+
+char& string::operator[](int index){
+	return m_str[index];
+}
+
+bool string::operator==(const string& r){
+	if(length() == r.length())
+		return memcmp(m_str, r.m_str, length()) == 0;
+	return false;
+}
+
+int string::index_of(char c){
+	for(int i = 0; i < length(); i++){
+		if(at(i) == c)
+			return i;
+	}
+	return -1;
+}
+
+size_t string::length() const{
+	return m_size - 1;
+}
+
+OutStream& operator<<(OutStream& stream, string& str){
+	stream << str.m_str;
+	return stream;
+}
