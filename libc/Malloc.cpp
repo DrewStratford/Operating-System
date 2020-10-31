@@ -1,4 +1,5 @@
 #include <Malloc.h>
+#include <string.h>
 
 #ifdef USER_SPACE
 // Hacky, but we need this defined so that the userspace
@@ -72,16 +73,20 @@ void* kmemalign(size_t alignment, size_t size){
 	return nullptr;
 }
 
+bool heap_valid(void* ptr){
+	FreeNode* free = (FreeNode*)(ptr - sizeof(FreeNode));
+	return free->magic == Allocated;
+}
+
+
 void kfree(void* ptr){
 	FreeNode* free = (FreeNode*)(ptr - sizeof(FreeNode));
 
 	if(free->magic == Free)
 		panic("kfree: freeing free memory!");
 
-	if(free->magic != Allocated){
-		//com1() << "kfree: trying to free unmanaged memory!\n";
-		return;
-	}
+	if(free->magic != Allocated)
+		panic("kfree: trying to free unmanaged memory!");
 
 	// Reinsert the node in the free list
 	for(FreeNode* next = free_nodes; next != nullptr; next = next->m_next){
