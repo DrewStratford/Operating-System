@@ -12,12 +12,12 @@ Directory& root_directory(){
 	return *root_dir;
 }
 
-DirectoryEntry::DirectoryEntry(char* name, Inode* inode)
+DirectoryEntry::DirectoryEntry(const string& name, Inode* inode)
 	: m_name(name), m_inode(inode){
 }
 
-bool DirectoryEntry::is_named(char* name){
-	return strcmp(m_name, name) == 0;
+bool DirectoryEntry::is_named(const string& name){
+	return m_name == name;
 }
 
 size_t VFile::size(){
@@ -27,7 +27,7 @@ size_t VFile::size(){
 size_t VFile::read(char* buffer, size_t offset, size_t amount){
 	if(offset > m_data.size())
 		return 0;
-	
+
 	size_t end = offset + amount;
 	size_t ret = 0;
 	for(size_t i = offset; i < end && i < size(); i++, ret++)
@@ -41,7 +41,7 @@ size_t VFile::write(char* buffer, size_t offset, size_t amount){
 
 	if(offset > m_data.size())
 		return 0;
-	
+
 	size_t end = offset + amount;
 	size_t ret = 0;
 	for(size_t i = offset; i < end; i++, ret++)
@@ -100,12 +100,12 @@ Directory::Directory(){
 	add_entry(".", this);
 }
 
-bool Directory::add_entry(char* name, Inode* inode){
+bool Directory::add_entry(const string& name, Inode* inode){
 	m_entries.insert_end(DirectoryEntry(name, inode));
 	return true;
 }
 
-DirectoryEntry* Directory::lookup_entry(char* name){
+DirectoryEntry* Directory::lookup_entry(const string& name){
 	for(size_t i = 0; i < m_entries.size(); i++){
 		DirectoryEntry* entry = &m_entries[i];
 		if(entry->is_named(name))
@@ -114,63 +114,49 @@ DirectoryEntry* Directory::lookup_entry(char* name){
 	return nullptr;
 }
 
-bool Directory::create_file(char* name){
+bool Directory::create_file(const string& name){
 	VFile* file = new VFile();
 	add_entry(name, file);
 	return true;
 }
 
-bool Directory::create_subdirectory(char* name){
+bool Directory::create_subdirectory(const string& name){
 	Directory* directory = new Directory();
 	directory->add_entry("..", this);
 	add_entry(name, directory);
 	return true;
 }
 
+DirectoryEntry* Directory::lookup_path(const string& path){
+	Vector<string> segments;
 
-DirectoryEntry* Directory::lookup_path(char* path){
-	Vector<char*> segments;
-	Vector<size_t> segment_lengths;
-
-	size_t idx = 0;
-	char* c = path;
-	size_t size = 0;
-	for(; idx < strlen(path); idx++){
-		if(path[idx] == '/'){
-			segments.insert_end(c);
-			segment_lengths.insert_end(size);
-			c = &path[idx+1];
-			size = 0;
-			continue;
-		}
-		size++;
+	string rem = path;
+	for(int split = rem.index_of('/'); split != -1; split = rem.index_of('/')){
+		string str = rem.substring(0, split);
+		segments.insert_end(str);
+		rem = rem.substring(split + 1);
 	}
+	segments.insert_end(rem);
 
-	segments.insert_end(c);
-	segment_lengths.insert_end(size);
-
-	char file_name[50];
 	Directory* directory = this;
 	DirectoryEntry* dir_ent = nullptr;
 
 	for(int i = 0; i < segments.size() && directory != nullptr; i++){
-		size_t len = segment_lengths[i];
-		memcpy(file_name, segments[i], len);
-		file_name[len] = '\0';
-		dir_ent = directory->lookup_entry(file_name);
+		dir_ent = directory->lookup_entry(segments[i]);
 		if(!dir_ent)
 			return nullptr;
 		directory = dir_ent->get_inode()->as_directory();
 	}
+
 	return dir_ent;
 }
 
-File* Directory::lookup_file(char* path){
+File* Directory::lookup_file(const string& path){
 	DirectoryEntry* de = lookup_path(path);
 	return de ? de->get_inode()->as_file() : nullptr;
 }
 
-Directory* Directory::lookup_directory(char* path){
+Directory* Directory::lookup_directory(const string& path){
 	DirectoryEntry* de = lookup_path(path);
 	return de ? de->get_inode()->as_directory() : nullptr;
 }

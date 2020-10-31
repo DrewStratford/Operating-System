@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 #include <data/Vector.h>
 #include <devices/Serial.h>
 #include <Lock.h>
@@ -22,14 +24,14 @@ protected:
 
 class DirectoryEntry{
 public:
-	DirectoryEntry(char*, Inode*);
-	bool is_named(char*);
+	DirectoryEntry(const string&, Inode*);
+	bool is_named(const string&);
 
 	Inode* get_inode() { return m_inode; };
 	void set_inode(Inode* i) { m_inode = i; };
 
 private:
-	char* m_name;
+	string m_name;
 	Inode* m_inode;
 };
 
@@ -71,13 +73,13 @@ public:
 	Directory();
 	virtual Directory* as_directory() { return this;} ;
 
-	bool add_entry(char* name, Inode*);
-	DirectoryEntry* lookup_entry(char* name);
-	bool create_file(char* name);
-	bool create_subdirectory(char* name);
-	DirectoryEntry* lookup_path(char* path);
-	Directory* lookup_directory(char* path);
-	File* lookup_file(char* path);
+	bool add_entry(const string& name, Inode*);
+	DirectoryEntry* lookup_entry(const string& name);
+	bool create_file(const string& name);
+	bool create_subdirectory(const string& name);
+	DirectoryEntry* lookup_path(const string& path);
+	Directory* lookup_directory(const string& path);
+	File* lookup_file(const string& path);
 
 private:
 	Vector<DirectoryEntry> m_entries;
