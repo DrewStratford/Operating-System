@@ -21,21 +21,21 @@ public:
 
 	~Vector(){
 		for(int i = 0; i < m_length; i++){
-			delete &m_data[i];
+			m_data[i].~T();
 		}
 	}
 
-	void insert_end(T t){
+	void insert_end(const T &t){
 		resize();
 		m_data[m_length] = t;
 		m_length++;
 	}
 
-	void insert_front(T t){
+	void insert_front(const T &t){
 		insert(0, t);
 	}
 
-	void insert(size_t index, T t){
+	void insert(size_t index, const T &t){
 		resize();
 		insert_impl(index);
 		m_data[index] = t;
