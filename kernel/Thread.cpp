@@ -77,7 +77,7 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 	all_threads.insert(this);
 }
 
-Thread::Thread(File& executable, size_t inode_count, int* inodes){
+Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& args){
 	NoInterrupts d;
 
 	tid = tid_allocator++;
@@ -109,14 +109,6 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	m_user_regions.insert(stack_region);
 	//TODO: create a heap region
 
-	// Swap into page table and write the executable.
-	// TODO: we could possibly have a hypothetical "inode-backed region"
-	// instead.
-	{
-		PagingScope scope(*this);
-		executable.read((char*)exec_region->get_start(), 0, executable.size());
-	}
-
 	stack_ptr -= sizeof(Registers);
 	Registers* regs = (Registers*)stack_ptr;
 
@@ -133,12 +125,59 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes){
 	regs->eip = exec_start;
 	regs->flags = 0x200; // enable interrupts
 
+	// Swap into page table and write the executable.
+	// TODO: we could possibly have a hypothetical "inode-backed region"
+	// instead.
+	{
+		PagingScope scope(*this);
+		executable.read((char*)exec_region->get_start(), 0, executable.size());
+
+		setup_arguments(args);
+	}
+
+
 	push_on_stack<Blocker>(Blocker(this));
 	Blocker* blocker = (Blocker*)stack_ptr;
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert(blocker);
 
 	all_threads.insert(this);
+}
+
+void Thread::setup_arguments(const string& arguments){
+	Vector<string> args;
+	Vector<char*> ptrs;
+	auto& regs = get_registers();
+
+	// Split up the arguments.
+	string rem = arguments;
+	for(int split = rem.index_of(' '); split != -1; split = rem.index_of(' ')){
+		string str = rem.substring(0, split);
+		args.insert_end(str);
+		rem = rem.substring(split + 1);
+	}
+	args.insert_end(rem);
+
+	// Push the strings on the user stack and capture their location.
+	for(int i = 0; i < args.size(); i++){
+		if(args[i].length() < 1)
+			continue;
+
+		size_t size = args[i].length() + 1;
+		regs.esp -= size;
+		char* ptr = (char*)regs.esp;
+		memcpy(ptr, args[i].m_str, size);
+		ptrs.insert_front(ptr);
+	}
+
+	// Push the ptrs as arguments.
+	for(int i = 0; i < ptrs.size(); i++)
+		push_on_user_stack(ptrs[i]);
+
+	// Push argv
+	push_on_user_stack(regs.esp);
+	// Push argc
+	push_on_user_stack(ptrs.size());
 }
 
 // As this deletes the Thread's context, it is important that we don't
@@ -399,12 +438,17 @@ static void tick_callback(Registers& registers){
 
 static int32_t syscall_create_thread(Registers& registers){
 	void** stack = (void**)registers.esp;
-	char* filepath = (char*)stack[0];
+	string filepath = string((char*)stack[0]);
 	size_t inode_count = (size_t)stack[1];
 	int* inodes = (int*)stack[2];
+	
+	string arguments = filepath;
+	int split = filepath.index_of(' ');
+	if(split != -1)
+		filepath = filepath.substring(0, split);
 
 	if(File* f = root_directory().lookup_file(filepath)){
-		Thread *t = new Thread(*f, inode_count, inodes);
+		Thread *t = new Thread(*f, inode_count, inodes, arguments);
 		return t->get_tid();
 	}
 	return -1;

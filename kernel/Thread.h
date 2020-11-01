@@ -58,9 +58,11 @@ class Thread : public ListNode<Thread>{
 public:
 	Thread();
 	Thread(uintptr_t stack, uintptr_t resume);
-	Thread(File&, size_t inode_count, int* inodes);
+	Thread(File&, size_t inode_count, int* inodes, const string&);
 
 	~Thread();
+
+	void setup_arguments(const string& arguments);
 
 	template <typename T>
 	void push_on_stack(T t){

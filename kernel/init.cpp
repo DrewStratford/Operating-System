@@ -37,7 +37,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	terminal->clear();
 
 	if(File* init_file = root_directory().lookup_file("vfs/init.prog")){
-		userspace_thread = new Thread(*init_file, 0, nullptr);
+		userspace_thread = new Thread(*init_file, 0, nullptr, "");
 	}
 
 	root_directory().add_entry("console", terminal);
