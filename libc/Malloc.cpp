@@ -2,6 +2,7 @@
 #include <string.h>
 
 #ifdef USER_SPACE
+#include <FileStream.h>
 // Hacky, but we need this defined so that the userspace
 // libc will compile. In the future we should introduce
 // a proper userspace panic.
@@ -14,8 +15,12 @@ FreeNode* free_nodes = nullptr;
 FreeNode end_node = FreeNode(0);
 FreeNode start_node = FreeNode(0);
 
+extern "C"
 void initialize_heap(uintptr_t start, uintptr_t end){
-
+	free_nodes = nullptr;
+	end_node = FreeNode(0);
+	start_node = FreeNode(0);
+	
 	size_t heap_size = end - start - sizeof(FreeNode);
 	FreeNode* allocation = (FreeNode*)start;
 	*allocation = FreeNode(heap_size);

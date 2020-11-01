@@ -102,12 +102,16 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	uintptr_t u_stack_bottom = u_stack_top - u_stack_size;
 	uintptr_t exec_start = 0x40000000;
 	uintptr_t exec_size = executable.size();
+	//TODO: sort out these values.
+	uintptr_t heap_size = 0x7000;
+	uintptr_t heap_start = u_stack_bottom - heap_size - 0x1000;
 	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
 	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
+	UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
 
 	m_user_regions.insert(exec_region);
 	m_user_regions.insert(stack_region);
-	//TODO: create a heap region
+	m_user_regions.insert(heap_region);
 
 	stack_ptr -= sizeof(Registers);
 	Registers* regs = (Registers*)stack_ptr;
@@ -133,6 +137,11 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 		executable.read((char*)exec_region->get_start(), 0, executable.size());
 
 		setup_arguments(args);
+
+		// Setup the heap size for initialize heap.
+		// TODO: this is kinda hacky.
+		push_on_user_stack(heap_start + heap_size);
+		push_on_user_stack(heap_start);
 	}
 
 

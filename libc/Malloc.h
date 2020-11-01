@@ -3,8 +3,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <data/List.h>
-
 extern void panic(char*);
 
 enum FreeNodeState{
@@ -103,6 +101,7 @@ public:
 	}
 };
 
+extern "C"
 void initialize_heap(uintptr_t start, uintptr_t end);
 
 void* kmalloc(size_t size);
