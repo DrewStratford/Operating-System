@@ -33,10 +33,10 @@ public:
 	string substring(int start) const;
 	string substring(int start, int end) const;
 
-	bool operator==(const string& r);
+	bool operator==(const string& r) const;
 	char& operator[](int);
-	char at(size_t i);
-	int index_of(char c);
+	char at(size_t i) const;
+	int index_of(char c) const;
 
 	size_t length() const;
 };

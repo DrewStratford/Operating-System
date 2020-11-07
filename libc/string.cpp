@@ -130,7 +130,7 @@ string string::substring(int start) const{
 	return substring(start, to_end);
 }
 
-char string::at(size_t i){
+char string::at(size_t i) const{
 	return m_str[i];
 }
 
@@ -138,13 +138,13 @@ char& string::operator[](int index){
 	return m_str[index];
 }
 
-bool string::operator==(const string& r){
+bool string::operator==(const string& r) const{
 	if(length() == r.length())
 		return memcmp(m_str, r.m_str, length()) == 0;
 	return false;
 }
 
-int string::index_of(char c){
+int string::index_of(char c) const{
 	for(int i = 0; i < length(); i++){
 		if(at(i) == c)
 			return i;
