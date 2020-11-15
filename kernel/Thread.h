@@ -93,20 +93,26 @@ public:
 	}
 
 	template<typename blocker>
-	auto wait_on_list(List<blocker>& list){
+	auto wait_on_list(List<blocker>& list, Lock& lock){
 		blocker list_blocker(this);
 		set_state(ThreadState::Blocked);
+		lock.lock();
 		list.insert_end(&list_blocker);
+		lock.unlock();
 		yield();
 		return list_blocker.finish();
 	}
 
 	template<typename blocker>
-	static void wake_from_list(List<blocker>& list){
-		if(list.is_empty())
+	static void wake_from_list(List<blocker>& list, Lock& lock){
+		lock.lock();
+		if(list.is_empty()){
+			lock.unlock();
 			return;
+		}
 
 		blocker* block = list.pop();
+		lock.unlock();
 		block->get_thread()->set_state(ThreadState::Runnable);
 		get_runnable_threads().insert_end((Blocker*)block);
 	};
@@ -125,6 +131,11 @@ public:
 	uint32_t get_tid() { return tid; };
 	uint32_t get_parent_tid() { return parent->get_tid(); };
 	Thread* get_parent() { return parent; };
+
+	string& get_name() { return m_name; };
+	void set_name(const string& str){ m_name = str;};
+	string& get_current_directory() { return m_current_directory; };
+	void set_current_directory(const string& str){ m_current_directory = str;};
 
 	List<Region> m_user_regions;
 	List<WaitBlocker> waiters;
@@ -147,6 +158,9 @@ private:
 	uintptr_t stack_ptr { 0 };
 	uintptr_t resume_ptr { 0 };
 	ThreadState state;
+
+	string m_name;
+	string m_current_directory;
 
 	uint32_t tid { 0 };
 	Thread* parent { nullptr };

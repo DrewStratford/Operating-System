@@ -5,19 +5,32 @@
 
 
 void Lock::lock(){
-	NoInterrupts ni;
 
-	while(owner != nullptr){
-		current_thread->wait_on_list<Blocker>(wait_list);
+	while(owner != current_thread
+		&& !__sync_bool_compare_and_swap(&owner, nullptr, current_thread)){
+		Thread::yield();
 	}
 	owner = current_thread;
+	nesting++;
+}
+
+bool Lock::try_lock(){
+
+	if(owner == current_thread
+		|| __sync_bool_compare_and_swap(&owner, nullptr, current_thread)){
+
+		owner = current_thread;
+		nesting++;
+		return true;
+	}
+	return false;
+
 }
 
 void Lock::unlock(){
-	NoInterrupts ni;
-
-	owner = nullptr;
-	Thread::wake_from_list(wait_list);
+	nesting--;
+	if(nesting == 0)
+		owner = nullptr;
 }
 
 ScopedLocker::ScopedLocker(Lock *lock){

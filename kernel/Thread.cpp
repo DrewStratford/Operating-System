@@ -6,9 +6,15 @@
 #include <devices/Serial.h>
 #include <devices/Interrupts.h>
 
+Lock all_threads_lock;
 List<Thread> all_threads;
+
+Lock runnable_threads_lock;
 List<Blocker> runnable_threads;
+
+Lock dying_threads_lock;
 List<Blocker> dying_threads;
+
 Thread kernel_thread;
 Thread* idle_thread = nullptr;
 Thread* current_thread = &kernel_thread;
@@ -57,7 +63,6 @@ extern "C" void user_thread_trampoline(void);
 Thread::Thread() {}
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
-	NoInterrupts i;
 	tid = tid_allocator++;
 	parent = current_thread;
 
@@ -74,11 +79,11 @@ Thread::Thread(uintptr_t stack, uintptr_t start) {
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert(blocker);
 
+	ScopedLocker locker(&all_threads_lock);
 	all_threads.insert(this);
 }
 
 Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& args){
-	NoInterrupts d;
 
 	tid = tid_allocator++;
 	parent = current_thread;
@@ -150,6 +155,7 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	set_state(ThreadState::Runnable);
 	runnable_threads.insert(blocker);
 
+	ScopedLocker locker(&all_threads_lock);
 	all_threads.insert(this);
 }
 
@@ -197,7 +203,9 @@ Thread::~Thread(){
 
 	com1() << "deleting Thread(" << (int)tid << ")\n";
 	//remove from the threads list
+	all_threads_lock.lock();
 	this->remove();
+	all_threads_lock.unlock();
 
 	//TODO: handle inodes somehow
 	kfree((void*)stack_bottom);
@@ -247,23 +255,27 @@ void Thread::yield(){
 	// in the runnable threads.
 	Blocker cpu_blocker(old_thread);
 
-	// Note that if we don't have any threads to run we just
-	// resume the kernel thread.
-	current_thread = runnable_threads.is_empty()
-		? &kernel_thread
-		: runnable_threads.pop()->get_thread();
+	{
+		NoInterrupts ni;
 
-	if(current_thread == old_thread)
-		return;
+		// Note that if we don't have any threads to run we just
+		// resume the kernel thread.
+		current_thread = runnable_threads.is_empty()
+			? &kernel_thread
+			: runnable_threads.pop()->get_thread();
 
-	// If appropriate, store the thread on the runnable threads queue.
-	// Otherwise we assume that another function has properly stored
-	// the thread on a queue.
-	if(old_thread != &kernel_thread && old_thread->get_state() == ThreadState::Running)
-		old_thread->wait_for_cpu(cpu_blocker);
+		if(current_thread == old_thread)
+			return;
 
-	current_thread->set_state(ThreadState::Running);
-	current_thread->set_remaining_ticks(current_thread->get_default_ticks());
+		// If appropriate, store the thread on the runnable threads queue.
+		// Otherwise we assume that another function has properly stored
+		// the thread on a queue.
+		if(old_thread != &kernel_thread && old_thread->get_state() == ThreadState::Running)
+			old_thread->wait_for_cpu(cpu_blocker);
+
+		current_thread->set_state(ThreadState::Running);
+		current_thread->set_remaining_ticks(current_thread->get_default_ticks());
+	}
 
 	// Set the kernel tss
 	get_tss().esp0 = current_thread->stack_top;
@@ -358,18 +370,24 @@ SignalDisposition Thread::send_signal(int tid, int signal){
 }
 
 void Thread::die(){
+	dying_threads_lock.lock();
 	Blocker death_blocker(this);
 	current_thread->set_state(ThreadState::Dead);
 	dying_threads.insert_end(&death_blocker);
+	dying_threads_lock.unlock();
 
 	// Remove the thread from the all threads list
+	all_threads_lock.lock();
 	this->remove();
+	all_threads_lock.unlock();
 
 	//wake any waiting threads
 	while(!waiters.is_empty()){
 		auto blocker = waiters.peek();
 		blocker->set_return(current_thread->exit_status());
-		wake_from_list<WaitBlocker>(waiters);
+		//TODO: proper locking
+		Lock temp;
+		wake_from_list<WaitBlocker>(waiters, temp);
 	}
 
 	yield();
@@ -377,6 +395,7 @@ void Thread::die(){
 
 Thread* Thread::lookup(int tid){
 
+	ScopedLocker locker(&all_threads_lock);
 	for(auto* t = all_threads.peek(); t != nullptr; t = t->next){
 		if(t->get_tid() == tid)
 			return t;
@@ -431,6 +450,7 @@ static void tick_callback(Registers& registers){
 	current_thread->set_remaining_ticks(ticks-1);
 
 	// Delete any reapable threads.
+	ScopedLocker locker(&dying_threads_lock);
 	List<Blocker> reaping;
 	for(auto* b = dying_threads.pop(); b; b = dying_threads.pop())
 		reaping.insert(b);
@@ -450,7 +470,7 @@ static int32_t syscall_create_thread(Registers& registers){
 	string filepath = string((char*)stack[0]);
 	size_t inode_count = (size_t)stack[1];
 	int* inodes = (int*)stack[2];
-	
+
 	string arguments = filepath;
 	int split = filepath.index_of(' ');
 	if(split != -1)
@@ -458,9 +478,29 @@ static int32_t syscall_create_thread(Registers& registers){
 
 	if(File* f = root_directory().lookup_file(filepath)){
 		Thread *t = new Thread(*f, inode_count, inodes, arguments);
+		t->set_name(filepath);
+		t->set_current_directory("/");
 		return t->get_tid();
 	}
 	return -1;
+}
+
+static int32_t syscall_getcwd(Registers& registers){
+	void** stack = (void**)registers.esp;
+	char* buffer = (char*)stack[0];
+	size_t size = (size_t)stack[1];
+
+	// TODO: actually check the size and location of the buffer.
+	string& dir = Thread::get_current()->get_current_directory();
+	memcpy(buffer, dir.m_str, dir.length()+1);
+	return 0;
+}
+
+static int32_t syscall_chdir(Registers& registers){
+	void** stack = (void**)registers.esp;
+	string path = string((char*)stack[0]);
+	// TODO: actually implement this
+	return 0;
 }
 
 static int32_t syscall_exit_thread(Registers& registers){
@@ -550,8 +590,10 @@ int32_t syscall_wait(Registers& registers){
 
 	if(Thread* waiting_on = Thread::lookup(tid)){
 		auto state = waiting_on->get_state();
+		//TODO: proper lock
+		Lock temp_lock;
 		if(state != ThreadState::Dead && state != ThreadState::Reaped)
-			current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters);
+			current_thread->wait_on_list<WaitBlocker>(waiting_on->waiters, temp_lock);
 
 		// Mark as reaped so that we can
 		waiting_on->set_state(ThreadState::Reaped);

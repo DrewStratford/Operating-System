@@ -11,5 +11,6 @@ public:
 	void wake_all();
 	int wait(Lock& lock);
 private:
+	Lock internal_lock;
 	List<Blocker> m_wait_list;
 };

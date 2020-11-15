@@ -6,12 +6,13 @@ class Blocker;
 class Thread;
 
 class Lock {
-	Thread * owner { nullptr };
-	List<Blocker> wait_list;
+	int nesting { 0 };
+	Thread* owner = nullptr;
 
 public:
 	void lock();
 	void unlock();
+	bool try_lock();
 
 	Thread* get_owner() { return owner; }
 };
