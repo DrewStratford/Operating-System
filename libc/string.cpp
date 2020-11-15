@@ -162,6 +162,10 @@ size_t string::length() const{
 }
 
 OutStream& operator<<(OutStream& stream, string& str){
-	stream << str.m_str;
+	if(str.m_str == nullptr){
+		stream << "nullptr";
+	} else {
+		stream << str.m_str;
+	}
 	return stream;
 }
