@@ -62,6 +62,11 @@ int strcmp(const void *s1, const void * s2){
 	return 0;
 }
 
+string::string(){
+	m_size = 0;
+	m_str = nullptr;
+}
+
 string::~string(){
 	if(m_str)
 		delete[] m_str;

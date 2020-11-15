@@ -23,6 +23,7 @@ private:
 
 public:
 	char* m_str { nullptr };
+	string();
 	string(const char* str);
 	string(const string&);
 	~string();
