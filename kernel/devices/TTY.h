@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <filesystem/FileSystem.h>
 #include <Stream.h>
+#include <InterruptQueue.h>
 
 class VGATerminal : public File {
 
@@ -24,6 +25,8 @@ public:
 	bool can_backspace();
 
 	void clear_screen();
+
+	InterruptQueue<uint8_t> interrupt_channel;
 
 private:
 	int x { 0 };

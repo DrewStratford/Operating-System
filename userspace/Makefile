@@ -12,6 +12,8 @@ OBJS =\
 	init.prog	\
 	factorial.prog	\
 	segfault.prog	\
+	idle.prog	\
+	branch.prog	\
 	
 
 

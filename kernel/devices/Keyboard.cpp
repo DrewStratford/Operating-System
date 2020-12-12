@@ -1,5 +1,6 @@
 #include <devices/Keyboard.h>
 
+#include <Thread.h>
 #include <devices/IO.h>
 #include <devices/Interrupts.h>
 
@@ -110,25 +111,37 @@ char* Keyboard::handle_code(uint8_t key){
 
 void keyboard_irq(Registers& rs){
 	uint8_t key = IO::in8(0x60);
+	console->interrupt_channel.append(key);
+}
 
-	if(key == 42 || key == 54)
-		keyboard->set_shift(true);
-	if(key == 182 || key == 170)
-		keyboard->set_shift(false);
+// A very simple thread to handle keyboard interrupts
+// Since it is an actual thread, and not running in an interrupt context
+// it can use typical thread synchronisation, which is nice.
+static void interrupt_routine(){
+	while(true){
+		NoInterrupts ni;
+		uint8_t key = console->interrupt_channel.read();
+		if(key == 42 || key == 54)
+			keyboard->set_shift(true);
+		if(key == 182 || key == 170)
+			keyboard->set_shift(false);
 
-	if(key == 29)
-		keyboard->set_ctrl(true);
-	if(key == 157)
-		keyboard->set_ctrl(false);
-
-	char* key_code = keyboard->handle_code(key);
-	console->input(key_code, strlen(key_code));
+		if(key == 29)
+			keyboard->set_ctrl(true);
+		if(key == 157)
+			keyboard->set_ctrl(false);
+		char* key_code = keyboard->handle_code(key);
+		console->input(key_code, strlen(key_code));
+	}
 }
 
 void initialize_keyboard(VGATerminal* term){
 	keyboard = new Keyboard();
 	console = term;
 	register_interrupt_callback(keyboard_irq, 0x21);
+	char* interrupt_stack = new char[2000] + 2000;
+	Thread* interupt_thread =
+		new Thread((uintptr_t)interrupt_stack, (uintptr_t)interrupt_routine);
 }
 
 File& keyboard_file(){
