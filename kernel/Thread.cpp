@@ -381,14 +381,19 @@ void Thread::die(){
 	this->remove();
 	all_threads_lock.unlock();
 
+	bool should_send_signal = true;
 	//wake any waiting threads
 	while(!waiters.is_empty()){
+		should_send_signal = false;
 		auto blocker = waiters.peek();
 		blocker->set_return(current_thread->exit_status());
 		//TODO: proper locking
 		Lock temp;
 		wake_from_list<WaitBlocker>(waiters, temp);
 	}
+
+	if(should_send_signal && get_parent())
+		get_parent()->signal(SIGCHLD);
 
 	yield();
 }

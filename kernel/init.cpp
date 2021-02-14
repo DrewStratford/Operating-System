@@ -42,6 +42,11 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	root_directory().add_entry("console", terminal);
 
+	// ignore any SIGCHLDS.
+	auto new_handler = SignalHandler();
+	new_handler.set_disposition(SignalDisposition::Ignore);
+	current_thread->set_handler(SIGCHLD, new_handler);
+
 	// From this point onwards other threads may be scheduled
 	sti();
 

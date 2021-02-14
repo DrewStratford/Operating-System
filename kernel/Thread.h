@@ -37,6 +37,9 @@ public:
 	uintptr_t get_callback(){
 		return callback;
 	}
+	void set_disposition(SignalDisposition disposition){
+		this->disposition = disposition;
+	}
 	SignalDisposition get_disposition(){
 		return disposition;
 	}
