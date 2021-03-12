@@ -19,6 +19,13 @@ enum ThreadState
 
 class Blocker;
 class WaitBlocker;
+enum BlockerStatus
+	{ Ok
+	, Waiting
+	, Failure
+	, Signalled
+	};
+
 
 enum SignalDisposition{
 	Ignore,
@@ -96,13 +103,19 @@ public:
 	}
 
 	template<typename blocker>
-	auto wait_on_list(List<blocker>& list, Lock& lock){
+	auto wait_on_list(List<blocker>& list, Lock& lock, bool* was_interrupted = nullptr){
 		blocker list_blocker(this);
 		set_state(ThreadState::Blocked);
 		lock.lock();
 		list.insert_end(&list_blocker);
 		lock.unlock();
+		m_blocker = &list_blocker;
 		yield();
+		if(was_interrupted != nullptr){
+			auto status = m_blocker->get_status();
+			*was_interrupted = status == Failure || status == Signalled;
+		}
+		m_blocker = nullptr;
 		return list_blocker.finish();
 	}
 
@@ -153,6 +166,13 @@ public:
 	static SignalDisposition send_signal(int tid, int signal);
 	void handle_signals();
 
+	Blocker* get_blocker(){
+		return m_blocker;
+	}
+
+	// Points to the current blocker, otherwise null.
+	Blocker* m_blocker { nullptr };
+
 private:
 	static List<Blocker>& get_runnable_threads();
 	static List<Blocker>& get_dying_threads();
@@ -187,14 +207,9 @@ private:
 	List<Signal> pending_signals;
 
 	static uint32_t tid_allocator;
-};
 
-enum BlockerStatus
-	{ Ok
-	, Waiting
-	, Failure
-	, Signalled
-	};
+	friend Blocker;
+};
 
 class Blocker : public ListNode<Blocker>{
 public:
@@ -203,16 +218,24 @@ public:
 	BlockerStatus get_status() { return status; };
 	Thread* get_thread(){ return thread; };
 	void finish(){ return; };
+	void signal(int no){
+		signal_no = no;
+		status = Signalled;
+		remove();
+		get_thread()->set_state(ThreadState::Runnable);
+		Thread::get_runnable_threads().insert_end(this);
+	}
 protected:
 	Thread *thread;
 	BlockerStatus status { Waiting };
+	int signal_no = -1;
 };
 
 class WaitBlocker : public Blocker{
 public:
 	WaitBlocker(Thread* t) : Blocker(t) {};
 	void set_return(int ret){ ret_val = ret; };
-	int finish(){ return ret_val; };
+	int finish(){ com1() << "signal = " << signal_no << "\n"; ret_val; };
 private:
 	int ret_val { 0 };
 };

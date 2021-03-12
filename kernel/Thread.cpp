@@ -302,6 +302,11 @@ SignalDisposition Thread::signal(int signal){
 		default:
 			break;
 	}
+
+	// Interrupt the thread if neccessary.
+	if(disposition != Ignore && get_state() == Blocked)
+		m_blocker->signal(signal);
+
 	return disposition;
 }
 

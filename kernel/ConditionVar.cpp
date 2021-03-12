@@ -13,13 +13,14 @@ void ConditionVar::wake_all(){
 	}
 }
 
-int ConditionVar::wait(Lock& lock){
+bool ConditionVar::wait(Lock& lock){
 
 	if(Thread::get_current() != lock.get_owner())
-		return -1;
+		return false;
 
 	lock.unlock();
-	current_thread->wait_on_list<Blocker>(m_wait_list, internal_lock);
+	bool interrupted;
+	current_thread->wait_on_list<Blocker>(m_wait_list, internal_lock, &interrupted);
 	lock.lock();
-	return 0;
+	return !interrupted;
 }

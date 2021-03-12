@@ -20,6 +20,10 @@ void callback(void){
 	debug("------>in the signal handler\n");
 }
 
+void handle_sigchld(void){
+	debug("sigchld");
+}
+
 int main(void){
 	debug("hello from userspace\n");
 	int stdfd = 0;
@@ -28,15 +32,18 @@ int main(void){
 	int c = 0;
 
 	signal(SIGINT, (uintptr_t)callback);
+	signal(SIGCHLD, (uintptr_t)handle_sigchld);
 	kill(-1, SIGINT);
+	kill(-1, SIGCHLD);
 
 	prompt(stream);
 	while(c = read(stdfd, buf, 0, 60)){
+		if(c < 0) continue;
 		buf[c] = '\0';
 		strip_newline(buf);
 		int fds[] = { stdfd };
 		int r = create_thread(buf, 1, fds);
-		stream << "ret: " << wait(r) << "\n";
+		//stream << "ret: " << wait(r) << "\n";
 
 		prompt(stream);
 	}

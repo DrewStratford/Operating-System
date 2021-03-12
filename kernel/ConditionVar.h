@@ -9,7 +9,7 @@ class ConditionVar {
 public:
 	void wake();
 	void wake_all();
-	int wait(Lock& lock);
+	bool wait(Lock& lock);
 private:
 	Lock internal_lock;
 	List<Blocker> m_wait_list;

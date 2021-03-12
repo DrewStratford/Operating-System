@@ -117,7 +117,8 @@ size_t VGATerminal::write(char* cs, size_t offset, size_t amount){
 size_t VGATerminal::read(char* cs, size_t offset, size_t amount){
 	ScopedLocker locker(&m_lock);
 	while(line_count < 1)
-		m_cvar.wait(m_lock);
+		if(!m_cvar.wait(m_lock))
+			return -1;
 
 	size_t out = 0;
 	for(; out < amount && !m_data.is_empty(); out++){
