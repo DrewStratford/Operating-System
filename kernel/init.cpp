@@ -15,10 +15,15 @@
 #include <filesystem/FileSystem.h>
 #include <string.h>
 #include <Lock.h>
+#include <functional.h>
 
 Thread* userspace_thread = nullptr;
 
 VGATerminal* terminal = nullptr;
+
+int apply(Func<int, int> f, int i){
+	return f(i);
+}
 
 extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_gdt_table();
@@ -50,6 +55,8 @@ extern "C" int kernel_main(multiboot_info_t* info){
 		com1() << "howdy: " << *i << "\n"; 
 		com1() << "howdy: " << *is << "\n"; 
 	}
+
+	com1() << "some test " << apply([](int i) { return i + 1;}, 10) << "\n";
 
 	// ignore any SIGCHLDS.
 	auto new_handler = SignalHandler();

@@ -1,3 +1,5 @@
+#pragma once
+
 class SharedInternal{
 private:
 	int references { 0 };

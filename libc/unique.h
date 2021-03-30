@@ -1,3 +1,5 @@
+#pragma once
+
 template <typename T>
 class Unique {
 public:
@@ -21,13 +23,14 @@ public:
 	}
 
 	Unique& operator=(Unique&& u){
-		if(this == u) return this;
+		if(this == &u) return *this;
 		if(ptr) delete ptr;
 		ptr = u.release();
-		return this;
+		return *this;
 	}
 
-	T* release(){
+
+	T* release() {
 		T* t = ptr;
 		ptr = nullptr;
 		return t;
