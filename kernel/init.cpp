@@ -1,4 +1,6 @@
 #include <icxxabi.h>
+#include <unique.h>
+#include <shared.h>
 #include <multiboot.h>
 #include <Thread.h>
 #include <devices/IO.h>
@@ -41,6 +43,13 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	}
 
 	root_directory().add_entry("console", terminal);
+
+	{
+		Unique<int> i = new int(10);
+		Shared<int> is = new int(20);
+		com1() << "howdy: " << *i << "\n"; 
+		com1() << "howdy: " << *is << "\n"; 
+	}
 
 	// ignore any SIGCHLDS.
 	auto new_handler = SignalHandler();
