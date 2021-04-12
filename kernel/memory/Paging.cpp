@@ -110,7 +110,7 @@ void initialize_paging(){
 	for(int i = 1; i < 1024; i++){
 		PTE& pte = init_page_table[i];
 		pte.set_address(i * 0x1000);
-		pte.userspace = true;
+		pte.userspace = false;
 		pte.writable = true;
 		pte.present = true;
 	}
@@ -118,14 +118,14 @@ void initialize_paging(){
 	// Setup first page table
 	PTE& page_directory = init_page_directory[0];
 	page_directory.set_address(reinterpret_cast<uintptr_t>(init_page_table));
-	page_directory.userspace = true;
+	page_directory.userspace = false;
 	page_directory.writable = true;
 	page_directory.present = true;
 
 	// Setup last table as a recursive mapping
 	PTE& recursive_mapping = init_page_directory[1023];
 	recursive_mapping.set_address(reinterpret_cast<uintptr_t>(init_page_directory));
-	recursive_mapping.userspace = true;
+	recursive_mapping.userspace = false;
 	recursive_mapping.writable = true;
 	recursive_mapping.present = true;
 
