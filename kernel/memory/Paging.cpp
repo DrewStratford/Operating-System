@@ -232,7 +232,6 @@ bool map_page(uintptr_t address, bool is_userspace){
 	entry.userspace = is_userspace;
 	entry.writable = true;
 	entry.present = true;
-	com1() << "mapped: " << (void*)address << " -> " << (void*)entry_physical << "\n";
 	return true;
 }
 
