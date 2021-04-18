@@ -14,6 +14,7 @@ OBJS =\
 	segfault.prog	\
 	idle.prog	\
 	branch.prog	\
+	stress.prog \
 	
 
 
