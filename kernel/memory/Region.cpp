@@ -40,7 +40,7 @@ bool Region::contains(uintptr_t addr){
 }
 
 void UserRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
-	com1() << *this << " handling UserRegion fault " << (void*)addr << "\n";
+//	com1() << *this << " handling UserRegion fault " << (void*)addr << "\n";
 
 	switch(fault_type){
 		case KernelWriteNP:
@@ -62,7 +62,7 @@ void send_segfault(){
 }
 
 void KernelRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
-	com1() << *this << " handling KernelRegion fault " << (void*)addr << "\n";
+//	com1() << *this << " handling KernelRegion fault " << (void*)addr << "\n";
 
 	switch(fault_type){
 		case KernelWriteNP:
@@ -84,7 +84,6 @@ GuardRegion::GuardRegion(uintptr_t start, uintptr_t end)
 	: Region("GuardRegion", start, end) { }
 
 void GuardRegion::handle_page_fault(PageFaultType fault_type, uintptr_t addr){
-	com1() << "fault in GuardRegion: " << (void*)addr << "\n";
 	switch(fault_type){
 		case UserWriteNP:
 		case UserReadNP:

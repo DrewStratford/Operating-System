@@ -198,8 +198,12 @@ void register_system_call(SystemCall syscall, size_t no){
 	system_calls[no % 256] = syscall;
 }
 
+extern Thread kernel_thread;
 extern "C" void interrupt_handler(Registers registers){
 	InterruptCallback handler = callbacks[registers.intr % 256];
+
+	if(current_thread)
+		current_thread->interrupt_depth++;
 
 	if(handler)
 		handler(registers);
@@ -213,7 +217,11 @@ extern "C" void interrupt_handler(Registers registers){
 	if(current_thread->get_remaining_ticks() <= 0)
 		Thread::yield();
 
-	current_thread->handle_signals();
+	if(current_thread->interrupt_depth == 1)
+		current_thread->handle_signals();
+
+	if(current_thread)
+		current_thread->interrupt_depth--;
 }
 
 void system_call_handler(Registers& registers){

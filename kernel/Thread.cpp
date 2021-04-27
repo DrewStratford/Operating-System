@@ -21,6 +21,9 @@ Thread* current_thread = &kernel_thread;
 
 uint32_t Thread:: tid_allocator = 1;
 
+extern "C" void signal_trampoline();
+extern "C" void signal_trampoline_end();
+
 void Thread::switch_thread(Thread& from, Thread& to){
     asm("pushfl\n"
         "pushl %%ebp\n"
@@ -60,6 +63,11 @@ static void asm_dummy(){
 extern "C" void kernel_thread_trampoline(void);
 extern "C" void user_thread_trampoline(void);
 
+void* get_signal_trampoline(){
+	//TODO: allocate this properly
+	return (void*)0x80000000;
+}
+
 Thread::Thread() {}
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
@@ -88,8 +96,8 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	tid = tid_allocator++;
 	parent = current_thread;
 
-	stack_bottom = (uintptr_t)kmemalign(0x1000,0x1000);
-	stack_top = stack_bottom + 0xFFF;
+	stack_bottom = (uintptr_t)kmemalign(0x1000,0x6000);
+	stack_top = stack_bottom + 0x5FFF;
 	stack_ptr = stack_top;
 	resume_ptr = (uintptr_t)user_thread_trampoline;
 
@@ -113,10 +121,12 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
 	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
 	UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
-
+	UserRegion* trampoline_region =
+		new UserRegion("signal_trampoline", (uintptr_t)get_signal_trampoline(), 0x1000);
 	m_user_regions.insert(exec_region);
 	m_user_regions.insert(stack_region);
 	m_user_regions.insert(heap_region);
+	m_user_regions.insert(trampoline_region);
 
 	stack_ptr -= sizeof(Registers);
 	Registers* regs = (Registers*)stack_ptr;
@@ -147,6 +157,11 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 		// TODO: this is kinda hacky.
 		push_on_user_stack(heap_start + heap_size);
 		push_on_user_stack(heap_start);
+
+		// Copy the signal trampoline
+		size_t tramp_size =
+			(size_t)signal_trampoline_end - (size_t)signal_trampoline;
+		memcpy(get_signal_trampoline(), (void*)signal_trampoline, tramp_size);
 	}
 
 
@@ -311,35 +326,34 @@ SignalDisposition Thread::signal(int signal){
 }
 
 static void sig_asm_dummy(){
-	// assumes a pusha followed by return address on
+	// assumes a pusha followed by eflags and return address on
 	// the stack.
-	asm volatile("signal_trampoline:\n"
-		"popa\n"
-		"ret\n"
-		"signal_trampoline_end:\n");
+	asm ("signal_trampoline:\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"signal_trampoline_end:\n"
+		:: [no]"i"(SC_sigreturn));
 }
-extern "C" void signal_trampoline();
-extern "C" void signal_trampoline_end();
 
 void Thread::handle_signals(){
 	if(pending_signals.is_empty())
 		return;
 
-	Signal* signal = pending_signals.pop();
-	SignalHandler handler = sig_handlers[signal->signal_id];
-
 	auto& regs = get_registers();
 	auto old_eip = regs.eip;
 	auto old_esp = regs.esp;
-	size_t trampoline_size =
-		(size_t)signal_trampoline_end - (size_t)signal_trampoline;
 
-	// load trampoline onto the user stack
-	memcpy((void*)old_esp, (void*)signal_trampoline, trampoline_size);
-	regs.esp-= trampoline_size;
+	Signal* signal = pending_signals.pop();
+	SignalHandler handler = sig_handlers[signal->signal_id];
+
+	// 16 bit align the stack
+	// 10 * 4 = 40
+	uint32_t stack_alignment = (regs.esp - 40) % 16;
+	regs.esp -= stack_alignment;
 
 	// return from the trampoline
 	push_on_user_stack<uint32_t>(old_eip);
+	push_on_user_stack<uint32_t>(regs.flags);
 
 	// pusha
 	push_on_user_stack<uint32_t>(regs.eax);
@@ -356,7 +370,7 @@ void Thread::handle_signals(){
 
 	// return from the handler into the
 	// trampoline that's been loaded to the stack
-	push_on_user_stack<uint32_t>(old_esp);
+	push_on_user_stack<void*>(get_signal_trampoline());
 
 	delete signal;
 }
@@ -540,6 +554,40 @@ static int32_t syscall_kill(Registers& registers){
 	return 0;
 }
 
+static int32_t syscall_sigreturn(Registers& registers){
+	uint32_t* stack = (uint32_t*)registers.esp;
+	auto& regs = current_thread->get_registers();
+	// POPA
+	regs.edi = *stack;
+	stack++;
+	regs.esi = *stack;
+	stack++;
+	regs.ebp = *stack;
+	stack++;
+	auto prev_esp = *stack;
+	stack++;
+	regs.ebx = *stack;
+	stack++;
+	regs.edx = *stack;
+	stack++;
+	regs.ecx = *stack;
+	stack++;
+	regs.eax = *stack;
+	stack++;
+
+	// POPF mask iopl etc
+	regs.flags = *stack & ~(0x3000 + 0x200 + 0x100);
+	stack++;
+
+	// RET
+	regs.eip = *stack;
+	stack++;
+	// Restore the stack
+	regs.esp = (uintptr_t)prev_esp;
+
+	return regs.eax;
+}
+
 int32_t syscall_open_file(Registers& registers){
 	char** stack = (char**)registers.esp;
 	char* filepath = stack[0];
@@ -628,5 +676,6 @@ void Thread::initialize(){
 	register_system_call(syscall_wait, SC_wait);
 	register_system_call(syscall_signal, SC_signal);
 	register_system_call(syscall_kill, SC_kill);
+	register_system_call(syscall_sigreturn, SC_sigreturn);
 	register_interrupt_callback(tick_callback, 0x20);
 }

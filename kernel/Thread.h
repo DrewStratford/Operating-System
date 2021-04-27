@@ -173,6 +173,7 @@ public:
 	// Points to the current blocker, otherwise null.
 	Blocker* m_blocker { nullptr };
 
+	int interrupt_depth { 0 };
 private:
 	static List<Blocker>& get_runnable_threads();
 	static List<Blocker>& get_dying_threads();

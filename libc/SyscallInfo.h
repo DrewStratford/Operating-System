@@ -14,3 +14,4 @@
 #define SC_wait 8
 #define SC_signal 9
 #define SC_kill 10
+#define SC_sigreturn 11
