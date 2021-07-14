@@ -21,7 +21,7 @@ void callback(void){
 }
 
 void handle_sigchld(void){
-	debug("sigchld");
+	debug("sigchld\n");
 }
 
 int main(void){
@@ -29,7 +29,7 @@ int main(void){
 	int stdfd = 0;
 	FileStream stream(stdfd);
 	char buf[61];
-	int c = 0;
+	volatile int32_t c = 0;
 
 	signal(SIGINT, (uintptr_t)callback);
 	signal(SIGCHLD, (uintptr_t)handle_sigchld);

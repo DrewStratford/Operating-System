@@ -346,6 +346,13 @@ void Thread::handle_signals(){
 	Signal* signal = pending_signals.pop();
 	SignalHandler handler = sig_handlers[signal->signal_id];
 
+	// Copy the signal trampoline onto the userspace stack
+	size_t tramp_size =
+		(size_t)signal_trampoline_end - (size_t)signal_trampoline;
+	regs.esp -= tramp_size;
+	memcpy((void*)regs.esp, (void*)signal_trampoline, tramp_size);
+	uint32_t tramp_start = regs.esp;
+
 	// 16 bit align the stack
 	// 10 * 4 = 40
 	uint32_t stack_alignment = (regs.esp - 40) % 16;
@@ -370,7 +377,8 @@ void Thread::handle_signals(){
 
 	// return from the handler into the
 	// trampoline that's been loaded to the stack
-	push_on_user_stack<void*>(get_signal_trampoline());
+	//push_on_user_stack<void*>(get_signal_trampoline());
+	push_on_user_stack<uint32_t>(tramp_start);
 
 	delete signal;
 }
