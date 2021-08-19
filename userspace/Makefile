@@ -13,6 +13,7 @@ OBJS =\
 	factorial.prog	\
 	segfault.prog	\
 	stress.prog \
+	test.elf	\
 	
 
 
@@ -26,6 +27,9 @@ crt0.o : crt0.S
 
 %.prog : %.cpp
 	$(CC) -T linker.ld $(CPPFLAGS) $< -o $@
+
+%.elf : %.cpp
+	$(CC) -T linker_elf.ld $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -f $(OBJS)

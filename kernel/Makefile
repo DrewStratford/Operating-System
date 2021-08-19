@@ -12,6 +12,7 @@ init.o \
 Thread.o \
 Lock.o	\
 ConditionVar.o	\
+ELF.o	\
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
@@ -32,7 +33,7 @@ libc:
 
 userspace:
 	make -C ../userspace
-	../tools/makevfs ../userspace/*.prog
+	../tools/makevfs ../userspace/*.prog ../userspace/*.elf
 
 
 %.o : %.cpp
@@ -53,7 +54,7 @@ run: os.iso
 	qemu-system-i386 -enable-kvm -serial stdio $<
 
 debug: os.iso
-	qemu-system-i386 -s -S -serial stdio -hdb hd.img $<
+	qemu-system-i386 -s -S -serial stdio $<
 
 clean:
 	rm -f $(OBJS)

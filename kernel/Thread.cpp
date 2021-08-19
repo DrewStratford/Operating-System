@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include <ELF.h>
 #include <memory/PagingScope.h>
 #include <devices/Serial.h>
 #include <devices/Interrupts.h>
@@ -110,6 +111,9 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 		insert_inode(current_thread->get_inode(inodes[i]));
 	}
 
+	ELFHeader elf_header;
+	executable.read((char*)&elf_header, 0, sizeof(elf_header));
+
 	uintptr_t u_stack_size = 0xf000;
 	uintptr_t u_stack_top = 0xFF000000;
 	uintptr_t u_stack_bottom = u_stack_top - u_stack_size;
@@ -118,15 +122,6 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	//TODO: sort out these values.
 	uintptr_t heap_size = 0x7000;
 	uintptr_t heap_start = u_stack_bottom - heap_size - 0x1000;
-	UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
-	UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
-	UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
-	UserRegion* trampoline_region =
-		new UserRegion("signal_trampoline", (uintptr_t)get_signal_trampoline(), 0x1000);
-	m_user_regions.insert(exec_region);
-	m_user_regions.insert(stack_region);
-	m_user_regions.insert(heap_region);
-	m_user_regions.insert(trampoline_region);
 
 	stack_ptr -= sizeof(Registers);
 	Registers* regs = (Registers*)stack_ptr;
@@ -144,24 +139,65 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	regs->eip = exec_start;
 	regs->flags = 0x200; // enable interrupts
 
-	// Swap into page table and write the executable.
-	// TODO: we could possibly have a hypothetical "inode-backed region"
-	// instead.
-	{
-		PagingScope scope(*this);
-		executable.read((char*)exec_region->get_start(), 0, executable.size());
+	ELFProgramHeader* program_headers;
+	ELFSectionHeader* section_headers;
 
-		setup_arguments(args);
+	if(elf_header.is_elf_executable()){
+		com1() << "it is an elf header!\n";
+		program_headers = elf_header.read_program_headers(executable);
+		section_headers = elf_header.read_section_headers(executable);
 
-		// Setup the heap size for initialize heap.
-		// TODO: this is kinda hacky.
-		push_on_user_stack(heap_start + heap_size);
-		push_on_user_stack(heap_start);
+		{
+			PagingScope scope(*this);
+			for(int i = 0; i < elf_header.program_header_count; i++){
+				auto& header = program_headers[i];
+				auto* new_region = new UserRegion("program header", header.p_vaddr, header.p_memsz);
+				m_user_regions.insert(new_region);
+				executable.read((char*)new_region->get_start(), header.p_offset, header.p_filesz);
+			}
 
-		// Copy the signal trampoline
-		size_t tramp_size =
-			(size_t)signal_trampoline_end - (size_t)signal_trampoline;
-		memcpy(get_signal_trampoline(), (void*)signal_trampoline, tramp_size);
+			UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
+			UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
+			m_user_regions.insert(stack_region);
+			m_user_regions.insert(heap_region);
+
+			setup_arguments(args);
+			// Setup the heap size for initialize heap.
+			// TODO: this is kinda hacky.
+			push_on_user_stack(heap_start + heap_size);
+			push_on_user_stack(heap_start);
+		}
+		regs->eip = elf_header.entry_point;
+
+	} else {
+		UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
+		UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
+		UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
+		UserRegion* trampoline_region =
+				new UserRegion("signal_trampoline", (uintptr_t)get_signal_trampoline(), 0x1000);
+		m_user_regions.insert(exec_region);
+		m_user_regions.insert(stack_region);
+		m_user_regions.insert(heap_region);
+		m_user_regions.insert(trampoline_region);
+		// Swap into page table and write the executable.
+		// TODO: we could possibly have a hypothetical "inode-backed region"
+		// instead.
+		{
+			PagingScope scope(*this);
+			executable.read((char*)exec_region->get_start(), 0, executable.size());
+
+			setup_arguments(args);
+
+			// Setup the heap size for initialize heap.
+			// TODO: this is kinda hacky.
+			push_on_user_stack(heap_start + heap_size);
+			push_on_user_stack(heap_start);
+
+			// Copy the signal trampoline
+			size_t tramp_size =
+					(size_t)signal_trampoline_end - (size_t)signal_trampoline;
+			memcpy(get_signal_trampoline(), (void*)signal_trampoline, tramp_size);
+		}
 	}
 
 
@@ -172,6 +208,7 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 
 	ScopedLocker locker(&all_threads_lock);
 	all_threads.insert(this);
+	com1() << "created thread!\n";
 }
 
 void Thread::setup_arguments(const string& arguments){
