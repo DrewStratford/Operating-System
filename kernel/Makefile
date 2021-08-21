@@ -33,7 +33,7 @@ libc:
 
 userspace:
 	make -C ../userspace
-	../tools/makevfs ../userspace/*.prog ../userspace/*.elf
+	../tools/makevfs ../userspace/*.txt ../userspace/*.elf
 
 
 %.o : %.cpp

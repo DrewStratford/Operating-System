@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <multiboot.h>
+
 #include <devices/Serial.h>
 #include <data/List.h>
 
@@ -44,7 +46,7 @@ class Region;
 
 OutStream& operator<<(OutStream&, PageFaultType err_code);
 
-void initialize_paging();
+void initialize_paging(multiboot_module_t*);
 void load_cr3(uintptr_t cr3);
 
 List<Region>* get_user_regions();

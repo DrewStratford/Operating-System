@@ -9,7 +9,7 @@ int main(void){
 	int console = open("console");
 	write(console, init_message, 0, strlen(init_message));
 	int fds[] = { console };
-	create_thread("vfs/test.prog", 1, fds );
+	create_thread("vfs/test.elf", 1, fds );
 	return 0;
 }
 

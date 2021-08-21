@@ -8,11 +8,11 @@ CC := g++
 
 OBJS =\
 	crt0.o	\
-	test.prog	\
-	init.prog	\
-	factorial.prog	\
-	segfault.prog	\
-	stress.prog \
+	test.elf	\
+	init.elf	\
+	factorial.elf	\
+	segfault.elf	\
+	stress.elf \
 	test.elf	\
 	
 

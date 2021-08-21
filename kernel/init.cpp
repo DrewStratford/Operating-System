@@ -26,15 +26,16 @@ int apply(Func<int, int> f, int i){
 }
 
 extern "C" int kernel_main(multiboot_info_t* info){
+	multiboot_module_t *mods = (multiboot_module_t*)info->mods_addr;
+
 	initialize_gdt_table();
 	initialize_interrupts();
-	initialize_paging();
+	initialize_paging(mods);
 	Clock::initialize();
 	com1() << "greetings\n";
 	Thread::initialize();
 
 	//load the initramfs module into the filesystem
-	multiboot_module_t *mods = (multiboot_module_t*)info->mods_addr;
 	uint32_t *file_header = (uint32_t*)mods->mod_start;
 
 	initialize_file_system(file_header);
@@ -43,7 +44,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_keyboard(terminal);
 	terminal->clear();
 
-	if(File* init_file = root_directory().lookup_file("vfs/init.prog")){
+	if(File* init_file = root_directory().lookup_file("vfs/init.elf")){
 		userspace_thread = new Thread(*init_file, 0, nullptr, "");
 	}
 

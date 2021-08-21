@@ -38,7 +38,7 @@ int main(void){
 	debug("\nstress testing yepasdfasd\n");
 	int stdfd = 0;
 	FileStream stream(stdfd);
-	char* buf = "vfs/factorial.prog";
+	char* buf = "vfs/factorial.elf";
 	int c = 0;
 	stream << "callback " << (void*)handle_sigchld << "\n";
 

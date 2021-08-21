@@ -94,7 +94,7 @@ static void page_callback(Registers& registers){
 	panic("page_callback: page fault out of region\n");
 }
 
-void initialize_paging(){
+void initialize_paging(multiboot_module_t* init_ramfs){
 	kernel_regions.insert(&null_region);
 	kernel_regions.insert(&text_region);
 	kernel_regions.insert(&rodata_region);
@@ -146,7 +146,12 @@ void initialize_paging(){
 
 	register_interrupt_callback(page_callback, 0x0e);
 	com1() << "finished paging\n";
-	initialize_heap(heap_region.get_start(), heap_region.end());
+
+	// Our initramfs module may be loaded in the heap region.
+	// It's important that we don't allocate this memory so we start our actual
+	// heap after this memory
+	auto heap_start = init_ramfs->mod_end > heap_region.get_start() ? init_ramfs->mod_end : heap_region.get_start();
+	initialize_heap(heap_start, heap_region.end());
 }
 
 static char* pagefaulttype_strs[] = {
