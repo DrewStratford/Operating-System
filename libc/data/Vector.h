@@ -23,6 +23,7 @@ public:
 		for(int i = 0; i < m_length; i++){
 			m_data[i].~T();
 		}
+		kfree(m_data);
 	}
 
 	void insert_end(const T &t){
