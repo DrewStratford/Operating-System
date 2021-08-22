@@ -43,7 +43,7 @@ int main(void){
 		strip_newline(buf);
 		int fds[] = { stdfd };
 		int r = create_thread(buf, 1, fds);
-		//stream << "ret: " << wait(r) << "\n";
+		stream << "ret: " << wait(r) << "\n";
 
 		prompt(stream);
 	}

@@ -14,7 +14,7 @@ OBJS =\
 	segfault.elf	\
 	stress.elf \
 	test.elf	\
-	
+	cat.elf	\
 
 
 all: $(OBJS)
