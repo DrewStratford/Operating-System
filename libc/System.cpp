@@ -27,12 +27,14 @@ int32_t get_time(){
 }
 
 int open(char* cs){
+	int32_t out = 0;
 	asm("push %[path]\n"
 		"mov %[no], %%eax\n"
 		"int $0x80\n"
 		"add $0x04, %%esp\n"
-		:: [no]"i"(SC_open_file), [path]"irm"(cs));
-	return 0;
+		: "=a"(out)
+		: [no]"i"(SC_open_file), [path]"irm"(cs));
+	return out;
 }
 
 int close(int fd){
