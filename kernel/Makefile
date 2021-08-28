@@ -52,10 +52,10 @@ os.iso: libc userspace os.kernel
 	grub-mkrescue --directory=/usr/lib/grub/i386-pc -o $@ ../bootdir
 
 run: os.iso
-	qemu-system-i386 -enable-kvm -serial stdio $<
+	qemu-system-i386 -enable-kvm -serial stdio -hda hd.img -cdrom $<
 
 debug: os.iso
-	qemu-system-i386 -s -S -serial stdio $<
+	qemu-system-i386 -s -S -serial stdio -hda hd.img -cdrom $<
 
 clean:
 	rm -f $(OBJS)

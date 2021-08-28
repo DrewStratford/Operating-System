@@ -26,6 +26,36 @@ int apply(Func<int, int> f, int i){
 	return f(i);
 }
 
+void writeHD(void){
+	IO::out8(0x1f6, 0xE0);
+	IO::out8(0x1f1,0);
+	IO::out8(0x1f2, 1);
+	IO::out8(0x1f3, 0);
+	IO::out8(0x1f4, 0);
+	IO::out8(0x1f5, 0);
+
+	//write sectors command
+	IO::out8(0x1f7, 0x30);
+
+	//wait
+	//TODO
+	while(0 != (IO::in8(0x1f7) & 0b10000000)){
+	}
+
+	for(int i = 0; i < 256; i++){
+		while(0 != (IO::in8(0x1f7) & 0b10000000)){
+		}
+		IO::out16(0x1f0, 0xbeef);
+		//com1() << "in = " << (void*) IO::in16(0x1f0) << "\n";
+	}
+
+	while(0 != (IO::in8(0x1f7) & 0b10000000)){
+	}
+
+	IO::out8(0x1f7, 0xE7);
+
+
+}
 extern "C" int kernel_main(multiboot_info_t* info){
 	multiboot_module_t *mods = (multiboot_module_t*)info->mods_addr;
 
@@ -38,6 +68,8 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	//load the initramfs module into the filesystem
 	uint32_t *file_header = (uint32_t*)mods->mod_start;
+	com1() << "busmaster: " << (void*)PCI::find_busmaster() << "\n";
+	writeHD();
 
 	initialize_file_system(file_header);
 
