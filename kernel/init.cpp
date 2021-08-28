@@ -10,6 +10,7 @@
 #include <devices/Keyboard.h>
 #include <devices/TTY.h>
 #include <devices/Clock.h>
+#include <devices/IDE.h>
 #include <memory/Paging.h>
 #include <Malloc.h>
 #include <filesystem/FileSystem.h>
@@ -43,6 +44,8 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	terminal = new VGATerminal();
 	initialize_keyboard(terminal);
 	terminal->clear();
+
+	PCI::check_devices();
 
 	if(File* init_file = root_directory().lookup_file("vfs/init.elf")){
 		userspace_thread = new Thread(*init_file, 0, nullptr, "");

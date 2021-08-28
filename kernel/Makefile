@@ -20,6 +20,7 @@ devices/Interrupts.o \
 devices/Keyboard.o \
 devices/TTY.o \
 devices/Clock.o \
+devices/IDE.o	\
 memory/Paging.o	\
 memory/PagingScope.o	\
 memory/Region.o	\
