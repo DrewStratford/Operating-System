@@ -189,7 +189,7 @@ PTE& lookup_page_entry(uintptr_t address){
 uintptr_t v_to_p(uintptr_t address){
 	if(!get_recursive_table(address))
 		return (uintptr_t) nullptr;
-	return lookup_page_entry(address).get_address();
+	return lookup_page_entry(address).get_address() | (address & 0xFFF);
 }
 
 bool is_page_present(uintptr_t address){
