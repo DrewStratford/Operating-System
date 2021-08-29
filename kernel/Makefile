@@ -13,6 +13,7 @@ Thread.o \
 Lock.o	\
 ConditionVar.o	\
 ELF.o	\
+devices/ATA.o	\
 devices/IO.o \
 devices/Serial.o \
 devices/CPU.o \
