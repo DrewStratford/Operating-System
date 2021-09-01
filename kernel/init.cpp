@@ -37,19 +37,8 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	com1() << "greetings\n";
 	Thread::initialize();
 
-	uint8_t* buffer = new uint8_t[1024];
-	for(int i = 0; i < 1024; i++){
-		buffer[i] = 'c';
-	}
-
-	com1() << "test: " << buffer[1] << "\n\n";
-	ATA ata;
-	ata.write(0, 1024, buffer);
-	com1() << "test: " << buffer[1] << "\n\n";
-
 	//load the initramfs module into the filesystem
 	uint32_t *file_header = (uint32_t*)mods->mod_start;
-	com1() << "busmaster: " << (void*)PCI::find_busmaster() << "\n";
 
 	initialize_file_system(file_header);
 
@@ -57,7 +46,13 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	initialize_keyboard(terminal);
 	terminal->clear();
 
-	PCI::check_devices();
+
+	uint8_t* buffer = new uint8_t[1024];
+	for(int i = 0; i < 1024; i++){
+		buffer[i] = 0;
+	}
+
+
 
 	if(File* init_file = root_directory().lookup_file("vfs/init.elf")){
 		userspace_thread = new Thread(*init_file, 0, nullptr, "");
@@ -81,6 +76,11 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	// From this point onwards other threads may be scheduled
 	sti();
+
+	ATA* ata = ATA::initialize(PCI::find_busmaster());
+	ata->read_dma(0, 1024, buffer);
+	ata->write_dma(3, 1024, buffer);
+	ata->read_dma(1, 1024, buffer);
 
 	// This the idle loop for the whole system and is only run
 	// when there are no runnable threads.

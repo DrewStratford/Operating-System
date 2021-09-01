@@ -20,11 +20,11 @@ uint32_t read32(uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){
 	uint32_t device32 = (uint32_t)device;
 	uint32_t func32   = (uint32_t)func;
 
-	uint32_t address = 
+	uint32_t address =
 			(bus32 << 16) | (device32 << 11) |
 			(func32 << 8) | (offset & 0xfc) |
 			((uint32_t)0x80000000);
-	
+
 	IO::out32(PCI::CONFIG_ADDR, address);
 
 	// hacky wait a bit for some data.
@@ -32,6 +32,20 @@ uint32_t read32(uint8_t bus, uint8_t device, uint8_t func, uint8_t offset){
 		IO::in32(PCI::CONFIG_DATA);
 	}
 	return IO::in32(PCI::CONFIG_DATA);
+}
+
+void write32(uint8_t bus, uint8_t device, uint8_t func, uint8_t offset, uint32_t data){
+	uint32_t bus32    = (uint32_t)bus;
+	uint32_t device32 = (uint32_t)device;
+	uint32_t func32   = (uint32_t)func;
+
+	uint32_t address =
+			(bus32 << 16) | (device32 << 11) |
+			(func32 << 8) | (offset & 0xfc) |
+			((uint32_t)0x80000000);
+
+	IO::out32(PCI::CONFIG_ADDR, address);
+	IO::out32(PCI::CONFIG_DATA, data);
 }
 
 // Finds the IO Registers for the busmaster dma device
@@ -53,8 +67,12 @@ uint32_t find_busmaster(){
 				bool class_subclass = (class_info >> 16) == 0x0101;
 				bool prog_if        = class_info & 0x8000;
 				if(class_subclass && prog_if){
-					// BAR4
-					return read32(bus,device,function,0x20);
+					// We need to ensure that bus master is enabled in the command register.
+					// Otherwise DMA won't work.
+					uint32_t command_reg = read32(bus,device,function,0x4) | 0x4;
+					write32(bus, device, function, 0x04, command_reg);
+					// BAR4, since it's IO space we zero out the lsb.
+					return read32(bus,device,function,0x20) ^ 1;
 				}
 
 			}
@@ -95,7 +113,7 @@ void check_devices(void){
 				uint32_t bar3 = read32(bus,device,function,0x1c);
 				uint32_t bar4 = read32(bus,device,function,0x20);
 
-				com1() << "bar0=" << (void*)bar0 
+				com1() << "bar0=" << (void*)bar0
 					<< ", bar1=" << (void*)bar1
 					<< ", bar2=" << (void*)bar2
 					<< ", bar3=" << (void*)bar3
