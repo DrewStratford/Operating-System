@@ -5,11 +5,14 @@
 #include <memory/Paging.h>
 #include <Thread.h>
 #include <InterruptQueue.h>
+#include <Lock.h>
 #include <ConditionVar.h>
 
 alignas (4) PRD pdrt[8];
 
 ATA* ata = nullptr;
+Lock disk_lock;
+
 
 InterruptQueue<bool>* interrupt_channel;
 
@@ -93,6 +96,8 @@ bool ATA::write(uint32_t lba, uint32_t size, uint8_t* buffer){
 bool ATA::dma_transfer(bool is_read, uint32_t lba, uint32_t size, uint8_t* buffer){
 	if(size % 512 != 0)
 		return false;
+
+	ScopedLocker locker(&disk_lock);
 
 	// Set up PRDT
 	pdrt[0].address = v_to_p((uintptr_t)buffer);
