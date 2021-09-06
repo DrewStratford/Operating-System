@@ -43,7 +43,6 @@ class [[gnu::packed]] PRD{
 class ATA{
 	private:
 		uint32_t dma_base {0};
-		volatile bool ready;
 
 	public:
 		static ATA* initialize(uint32_t busmaster);

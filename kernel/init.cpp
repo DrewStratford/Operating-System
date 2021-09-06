@@ -22,9 +22,24 @@
 Thread* userspace_thread = nullptr;
 
 VGATerminal* terminal = nullptr;
+ATA* ata_disk = nullptr;
 
 int apply(Func<int, int> f, int i){
 	return f(i);
+}
+
+static void ata_dma_thread(){
+	sti();
+	uint8_t* buffer = new uint8_t[1024];
+	memset(buffer, 0, 1024);
+
+	ata_disk->read_dma(0, 1024, buffer);
+	ata_disk->write_dma(3, 1024, buffer);
+	ata_disk->read_dma(1, 1024, buffer);
+
+	current_thread->mark_for_death(0);
+	while(true)
+		asm("hlt");
 }
 
 extern "C" int kernel_main(multiboot_info_t* info){
@@ -36,6 +51,7 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	Clock::initialize();
 	com1() << "greetings\n";
 	Thread::initialize();
+	ata_disk = ATA::initialize(PCI::find_busmaster());
 
 	//load the initramfs module into the filesystem
 	uint32_t *file_header = (uint32_t*)mods->mod_start;
@@ -45,14 +61,6 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	terminal = new VGATerminal();
 	initialize_keyboard(terminal);
 	terminal->clear();
-
-
-	uint8_t* buffer = new uint8_t[1024];
-	for(int i = 0; i < 1024; i++){
-		buffer[i] = 0;
-	}
-
-
 
 	if(File* init_file = root_directory().lookup_file("vfs/init.elf")){
 		userspace_thread = new Thread(*init_file, 0, nullptr, "");
@@ -77,10 +85,10 @@ extern "C" int kernel_main(multiboot_info_t* info){
 	// From this point onwards other threads may be scheduled
 	sti();
 
-	ATA* ata = ATA::initialize(PCI::find_busmaster());
-	ata->read_dma(0, 1024, buffer);
-	ata->write_dma(3, 1024, buffer);
-	ata->read_dma(1, 1024, buffer);
+	// Test disk dma in new thread.
+	char* dma_stack = new char[2000] + 2000;
+	Thread* interupt_thread =
+		new Thread((uintptr_t)dma_stack, (uintptr_t)ata_dma_thread);
 
 	// This the idle loop for the whole system and is only run
 	// when there are no runnable threads.

@@ -3,17 +3,22 @@
 #include <devices/Interrupts.h>
 #include <devices/Serial.h>
 #include <memory/Paging.h>
+#include <Thread.h>
+#include <InterruptQueue.h>
+#include <ConditionVar.h>
 
 alignas (4) PRD pdrt[8];
-uint32_t dma_base_ = 0;
 
 ATA* ata = nullptr;
+
+InterruptQueue<bool>* interrupt_channel;
 
 void dma_callback(Registers&){
 	ata->handle_interrupt();
 }
 
 ATA* ATA::initialize(uint32_t busmaster){
+	interrupt_channel = new InterruptQueue<bool>();
 	return (ata = new ATA(busmaster));
 }
 
@@ -21,17 +26,13 @@ ATA::ATA(uint32_t busmaster) : dma_base(busmaster){
 	register_interrupt_callback(dma_callback, 0x2e);
 	//allow interrupts
 	IO::out8(ATA_CONTROL, 0x0);
-	dma_base_ = dma_base;
 }
 
+// handles the dma interrupt and wakes up the blocking thread.
 void ATA::handle_interrupt(){
-	uint8_t status = IO::in8(dma_base_+BUS_STATUS);
-	uint8_t dstatus = IO::in8(ATA_BASE+STATUS);
 	IO::out8(dma_base+BUS_STATUS, 0x64);
 	IO::out8(dma_base+BUS_COMMAND, 0x0);
-	com1() << "in callback " << (void*)status << ", " << (void*)dstatus << "\n" ;
-	ready = true;
-
+	interrupt_channel->append(true);
 }
 
 void ATA::wait(){
@@ -93,8 +94,6 @@ bool ATA::dma_transfer(bool is_read, uint32_t lba, uint32_t size, uint8_t* buffe
 	if(size % 512 != 0)
 		return false;
 
-	ready = false;
-
 	// Set up PRDT
 	pdrt[0].address = v_to_p((uintptr_t)buffer);
 	pdrt[0].count = (uint16_t)size;
@@ -115,13 +114,9 @@ bool ATA::dma_transfer(bool is_read, uint32_t lba, uint32_t size, uint8_t* buffe
 	uint8_t dma_cmd = is_read ? 0x00 : 0x08;
 	IO::out8(dma_base+BUS_COMMAND,  dma_cmd | 0x1);
 
-	// Janky spinloop
-	while(!ready){ }
+	// Sleep until the interrupt handler signals that we've read all the data.
+	interrupt_channel->read();
 
-	com1 () << "buffer[10] = " << buffer[10] << "\n";
-	com1 () << "buffer[513] = " << buffer[513] << "\n";
-	com1() << "status: " << IO::in8(dma_base+BUS_STATUS) << "\n";
-	com1() << "status: " << IO::in8(ATA_BASE+STATUS) << "\n";
 	return true;
 }
 

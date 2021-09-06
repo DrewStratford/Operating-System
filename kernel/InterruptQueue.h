@@ -18,7 +18,8 @@ private:
 	ConditionVar waiters;
 
 public:
-	void append(T& t){
+
+	void append(const T& t){
 		m_data.insert_end(t);
 		waiters.wake();
 	}
