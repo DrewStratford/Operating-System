@@ -326,11 +326,21 @@ SignalDisposition Thread::signal(int signal){
 }
 
 static void sig_asm_dummy(){
-	// assumes a pusha followed by eflags and return address on
-	// the stack.
+	// assumes stack alignment followed by pusha, eflags and
+	// return address on the stack.
+	// TODO: restore signal mask
 	asm ("signal_trampoline:\n"
-		"mov %[no], %%eax\n"
-		"int $0x80\n"
+		"mov %%ebp, %%esp\n"	// undo stack alignment
+		"pop %%edi\n"
+		"pop %%esi\n"
+		"pop %%ebp\n"
+		"add $4, %%esp\n"
+		"pop %%ebx\n"
+		"pop %%edx\n"
+		"pop %%ecx\n"
+		"pop %%eax\n"
+		"popf\n"
+		"ret\n"
 		"signal_trampoline_end:\n"
 		:: [no]"i"(SC_sigreturn));
 }
@@ -353,11 +363,6 @@ void Thread::handle_signals(){
 	memcpy((void*)regs.esp, (void*)signal_trampoline, tramp_size);
 	uint32_t tramp_start = regs.esp;
 
-	// 16 bit align the stack
-	// 10 * 4 = 40
-	uint32_t stack_alignment = (regs.esp - 40) % 16;
-	regs.esp -= stack_alignment;
-
 	// return from the trampoline
 	push_on_user_stack<uint32_t>(old_eip);
 	push_on_user_stack<uint32_t>(regs.flags);
@@ -371,6 +376,11 @@ void Thread::handle_signals(){
 	push_on_user_stack<uint32_t>(regs.ebp);
 	push_on_user_stack<uint32_t>(regs.esi);
 	push_on_user_stack<uint32_t>(regs.edi);
+
+	// so we can restore the stack after alignment
+	regs.ebp = regs.esp;
+	// Align to 16 bytes as per SYSV api.
+	regs.esp &= 0xFFFFFFF0;
 
 	// 'call' the handler
 	regs.eip = handler.get_callback();
@@ -562,37 +572,8 @@ static int32_t syscall_kill(Registers& registers){
 }
 
 static int32_t syscall_sigreturn(Registers& registers){
-	uint32_t* stack = (uint32_t*)registers.esp;
-	auto& regs = current_thread->get_registers();
-	// POPA
-	regs.edi = *stack;
-	stack++;
-	regs.esi = *stack;
-	stack++;
-	regs.ebp = *stack;
-	stack++;
-	auto prev_esp = *stack;
-	stack++;
-	regs.ebx = *stack;
-	stack++;
-	regs.edx = *stack;
-	stack++;
-	regs.ecx = *stack;
-	stack++;
-	regs.eax = *stack;
-	stack++;
-
-	// POPF mask iopl etc
-	regs.flags = *stack & ~(0x3000 + 0x200 + 0x100);
-	stack++;
-
-	// RET
-	regs.eip = *stack;
-	stack++;
-	// Restore the stack
-	regs.esp = (uintptr_t)prev_esp;
-
-	return regs.eax;
+	//TODO: should restore the threads signal mask.
+	return 0;
 }
 
 int32_t syscall_open_file(Registers& registers){
