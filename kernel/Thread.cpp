@@ -64,11 +64,6 @@ static void asm_dummy(){
 extern "C" void kernel_thread_trampoline(void);
 extern "C" void user_thread_trampoline(void);
 
-void* get_signal_trampoline(){
-	//TODO: allocate this properly
-	return (void*)0x80000000;
-}
-
 Thread::Thread() {}
 
 Thread::Thread(uintptr_t stack, uintptr_t start) {
@@ -382,7 +377,6 @@ void Thread::handle_signals(){
 
 	// return from the handler into the
 	// trampoline that's been loaded to the stack
-	//push_on_user_stack<void*>(get_signal_trampoline());
 	push_on_user_stack<uint32_t>(tramp_start);
 
 	delete signal;
