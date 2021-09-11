@@ -118,7 +118,6 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	uintptr_t u_stack_top = 0xFF000000;
 	uintptr_t u_stack_bottom = u_stack_top - u_stack_size;
 	uintptr_t exec_start = 0x40000000;
-	uintptr_t exec_size = executable.size();
 	//TODO: sort out these values.
 	uintptr_t heap_size = 0x7000;
 	uintptr_t heap_start = u_stack_bottom - heap_size - 0x1000;
@@ -143,7 +142,6 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 	ELFSectionHeader* section_headers;
 
 	if(elf_header.is_elf_executable()){
-		com1() << "it is an elf header!\n";
 		program_headers = elf_header.read_program_headers(executable);
 		section_headers = elf_header.read_section_headers(executable);
 
@@ -167,39 +165,9 @@ Thread::Thread(File& executable, size_t inode_count, int* inodes, const string& 
 			push_on_user_stack(heap_start + heap_size);
 			push_on_user_stack(heap_start);
 		}
+
 		regs->eip = elf_header.entry_point;
-
-	} else {
-		UserRegion* exec_region = new UserRegion("executable", exec_start, exec_size);
-		UserRegion* stack_region = new UserRegion("user_stack", u_stack_bottom, u_stack_size);
-		UserRegion* heap_region = new UserRegion("user_heap", heap_start, heap_size);
-		UserRegion* trampoline_region =
-				new UserRegion("signal_trampoline", (uintptr_t)get_signal_trampoline(), 0x1000);
-		m_user_regions.insert(exec_region);
-		m_user_regions.insert(stack_region);
-		m_user_regions.insert(heap_region);
-		m_user_regions.insert(trampoline_region);
-		// Swap into page table and write the executable.
-		// TODO: we could possibly have a hypothetical "inode-backed region"
-		// instead.
-		{
-			PagingScope scope(*this);
-			executable.read((char*)exec_region->get_start(), 0, executable.size());
-
-			setup_arguments(args);
-
-			// Setup the heap size for initialize heap.
-			// TODO: this is kinda hacky.
-			push_on_user_stack(heap_start + heap_size);
-			push_on_user_stack(heap_start);
-
-			// Copy the signal trampoline
-			size_t tramp_size =
-					(size_t)signal_trampoline_end - (size_t)signal_trampoline;
-			memcpy(get_signal_trampoline(), (void*)signal_trampoline, tramp_size);
-		}
 	}
-
 
 	push_on_stack<Blocker>(Blocker(this));
 	Blocker* blocker = (Blocker*)stack_ptr;
