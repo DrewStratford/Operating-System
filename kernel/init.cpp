@@ -69,12 +69,22 @@ extern "C" int kernel_main(multiboot_info_t* info){
 
 	root_directory().add_entry("console", terminal);
 
+	Weak<int> i_weak;
+	Shared<int> i_shared;
 	{
 		Unique<int> i = new int(10);
 		Shared<int> is = new int(20);
+		i_shared = Shared(is);
+		i_weak = is.make_weak();
 		com1() << "howdy: " << *i << "\n"; 
 		com1() << "howdy: " << *is << "\n"; 
+		if(i_weak.is_valid())
+			com1() << "weak is: " << *i_weak << "\n";
 	}
+	if(i_weak.is_valid())
+		com1() << "Error still valid\n";
+	else 
+		com1() << "i_weak no longer valid\n";
 
 	com1() << "some test " << apply([](int i) { return i + 1;}, 10) << "\n";
 
