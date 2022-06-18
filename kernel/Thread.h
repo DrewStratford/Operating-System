@@ -159,6 +159,7 @@ public:
 	Inode* get_inode(int32_t);
 	int32_t insert_inode(Inode*);
 	int32_t open_file(char*);
+	int32_t open_directory(char*);
 	void close_file(int32_t);
 
 	void set_handler(int signal, SignalHandler handler);

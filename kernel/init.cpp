@@ -45,6 +45,7 @@ static void ata_dma_thread(){
 extern "C" int kernel_main(multiboot_info_t* info){
 	multiboot_module_t *mods = (multiboot_module_t*)info->mods_addr;
 
+
 	initialize_gdt_table();
 	initialize_interrupts();
 	initialize_paging(mods);

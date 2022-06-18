@@ -16,6 +16,15 @@ DirectoryEntry::DirectoryEntry(const string& name, Inode* inode)
 	: m_name(name), m_inode(inode){
 }
 
+UserDirectoryEntry DirectoryEntry::as_user_directory_entry(){
+	UserDirectoryEntry::Type entry_type = UserDirectoryEntry::Type::F;
+	if(m_inode->as_directory()){
+		entry_type = UserDirectoryEntry::Type::D;
+	}
+	// don't return size for now.
+	return UserDirectoryEntry(m_name.m_str, entry_type, 0);
+}
+
 bool DirectoryEntry::is_named(const string& name){
 	return m_name == name;
 }
@@ -114,6 +123,13 @@ DirectoryEntry* Directory::lookup_entry(const string& name){
 	return nullptr;
 }
 
+DirectoryEntry* Directory::read_entry(size_t offset){
+	if(offset < m_entries.size()){
+		return &m_entries[offset];
+	}
+	return nullptr;
+}
+
 bool Directory::create_file(const string& name){
 	VFile* file = new VFile();
 	add_entry(name, file);
@@ -160,7 +176,6 @@ Directory* Directory::lookup_directory(const string& path){
 	DirectoryEntry* de = lookup_path(path);
 	return de ? de->get_inode()->as_directory() : nullptr;
 }
-
 
 // This code is used to load the initramfs into
 // the virtual file system.

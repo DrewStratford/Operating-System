@@ -7,6 +7,9 @@
 #include <Lock.h>
 #include <ConditionVar.h>
 
+#include <System.h>
+
+
 class DirectoryEntry;
 class Inode;
 class File;
@@ -29,6 +32,7 @@ public:
 
 	Inode* get_inode() { return m_inode; };
 	void set_inode(Inode* i) { m_inode = i; };
+	UserDirectoryEntry as_user_directory_entry();
 
 private:
 	string m_name;
@@ -75,6 +79,7 @@ public:
 
 	bool add_entry(const string& name, Inode*);
 	DirectoryEntry* lookup_entry(const string& name);
+	DirectoryEntry* read_entry(size_t offset);
 	bool create_file(const string& name);
 	bool create_subdirectory(const string& name);
 	DirectoryEntry* lookup_path(const string& path);

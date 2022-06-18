@@ -24,12 +24,25 @@ void handle_sigchld(void){
 	debug("sigchld\n");
 }
 
+void test_directory(FileStream& stream){
+	int dir = opendir(".");
+	stream << "dir is "<<dir<<"\n";
+	for(auto i = 0; i < 10; i++){
+		UserDirectoryEntry de;
+		if(readdir(dir, (void*)&de, i) < 0 ){
+			stream << "no more dirs\n";
+			break;
+		}
+		stream << i << " (" << de.name << ")\n";
+	}
+}
 int main(void){
 	debug("hello from userspace\n");
 	int stdfd = 0;
 	FileStream stream(stdfd);
 	char buf[61];
 	volatile int32_t c = 0;
+	test_directory(stream);
 
 	signal(SIGINT, (uintptr_t)callback);
 	signal(SIGCHLD, (uintptr_t)handle_sigchld);

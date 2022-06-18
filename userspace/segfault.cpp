@@ -4,7 +4,7 @@
 #include <FileStream.h>
 #include <Time.h>
 void handler(void){
-	debug("in signal handler\n");
+	debug("in segfault signal handler\n");
 	exit(-101);
 }
 int main(void){

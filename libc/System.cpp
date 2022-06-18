@@ -37,6 +37,34 @@ int open(char* cs){
 	return out;
 }
 
+int opendir(char* cs){
+	int32_t out = 0;
+	asm("push %[path]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x04, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_open_directory), [path]"irm"(cs));
+	return out;
+}
+
+int readdir(int fd, void* buffer, size_t offset){
+	int32_t out = 0;
+	asm("push %[fd]\n"
+		"push %[buf]\n"
+		"push %[off]\n"
+		"mov %[no], %%eax\n"
+		"int $0x80\n"
+		"add $0x10, %%esp\n"
+		: "=a"(out)
+		: [no]"i"(SC_read_directory),
+		  [fd]"irm"(fd),
+		  [buf]"irm"(buffer),
+		  [off]"irm"(offset));
+	return out;
+}
+
+
 int close(int fd){
 	asm("push %[fd]\n"
 		"mov %[no], %%eax\n"

@@ -481,6 +481,14 @@ int32_t Thread::open_file(char* filepath){
 	return insert_inode(file);
 }
 
+int32_t Thread::open_directory(char* filepath){
+	Directory* dir = root_directory().lookup_directory(filepath);
+	if(!dir)
+		return -1;
+
+	return insert_inode(dir);
+}
+
 void Thread::close_file(int32_t i){
 	if(i < MAX_INODES && i >= 0)
 		m_inodes[i] = nullptr;
@@ -583,6 +591,35 @@ int32_t syscall_open_file(Registers& registers){
 	return fd;
 }
 
+int32_t syscall_open_directory(Registers& registers){
+	char** stack = (char**)registers.esp;
+	char* filepath = stack[0];
+	int32_t fd = current_thread->open_directory(filepath);
+	return fd;
+}
+
+int32_t syscall_read_directory(Registers& registers){
+	char** stack = (char**)registers.esp;
+	int32_t fd = (int32_t)stack[2];
+	char* buffer = (char*)stack[1];
+	size_t offset = (size_t)stack[0];
+
+	Inode* inode = current_thread->get_inode(fd);
+	if(!inode)
+		return -1;
+
+	Directory* dir = inode->as_directory();
+	if(!dir)
+		return -1;
+
+	DirectoryEntry* dirEnt = dir->read_entry(offset);
+	if(!dirEnt)
+		return -1;
+
+	*(UserDirectoryEntry*)buffer = dirEnt->as_user_directory_entry();
+	return 0;
+}
+
 int32_t syscall_close_file(Registers& registers){
 	char** stack = (char**)registers.esp;
 	int32_t fd = (int32_t)stack[0];
@@ -658,6 +695,8 @@ void Thread::initialize(){
 	register_system_call(syscall_create_thread, SC_create_thread);
 	register_system_call(syscall_exit_thread, SC_exit_thread);
 	register_system_call(syscall_open_file, SC_open_file);
+	register_system_call(syscall_open_directory, SC_open_directory);
+	register_system_call(syscall_read_directory, SC_read_directory);
 	register_system_call(syscall_close_file, SC_close_file);
 	register_system_call(syscall_read_fd, SC_read);
 	register_system_call(syscall_write_fd, SC_write);

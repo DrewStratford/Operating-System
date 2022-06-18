@@ -15,6 +15,7 @@ OBJS =\
 	stress.elf \
 	test.elf	\
 	cat.elf	\
+	ls.elf	\
 
 
 all: $(OBJS)

@@ -15,3 +15,7 @@
 #define SC_signal 9
 #define SC_kill 10
 #define SC_sigreturn 11
+#define SC_open_directory 12
+#define SC_read_directory 13
+
+#define FILE_NAME_SIZE 256
