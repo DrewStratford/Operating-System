@@ -196,8 +196,5 @@ public:
 		return out;
 	}
 
- 	T* operator->() const { return data; }
- 	T& operator*()  const { return *data; }
-
 	friend class Shared<T>;
 };
