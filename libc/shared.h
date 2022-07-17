@@ -6,22 +6,39 @@ private:
 	int weak_references { 0 };
 
 public:
-	static void dec(SharedInternal* shared) {
+	static int dec(SharedInternal* shared) {
 		if(shared)
-			shared->references--;
+			return __atomic_fetch_sub(&shared->references, 1, __ATOMIC_ACQ_REL);
+		return 0;
 	}
-	static void inc(SharedInternal* shared) {
+	static int inc(SharedInternal* shared) {
 		if(shared)
-			shared->references++;
+			return __atomic_fetch_add(&shared->references, 1, __ATOMIC_RELAXED);
+		return 0;
 	}
-	static void inc_weak(SharedInternal* shared) {
+	static int inc_weak(SharedInternal* shared) {
 		if(shared)
-			shared->weak_references++;
+			return __atomic_fetch_add(&shared->weak_references, 1, __ATOMIC_RELAXED);
+		return 0;
 	}
-	static void dec_weak(SharedInternal* shared) {
+	static int dec_weak(SharedInternal* shared) {
 		if(shared)
-			shared->weak_references--;
+			return __atomic_fetch_sub(&shared->weak_references, 1, __ATOMIC_ACQ_REL);
+		return 0;
 	}
+
+	static int inc_weak_shared(SharedInternal* shared){
+		if(!shared)
+			return 0;
+		while(shared->references != 0){
+			int refs = shared->references;
+			if(__atomic_compare_exchange_n(&shared->references, &refs, refs+1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)){
+				return shared->references;
+			}
+		}
+		return 0;
+	}
+
 	bool should_destruct() { return references == 0; }
 	bool should_destruct_counter() { return references == 0 && weak_references == 0; }
 	bool has_references() { return references > 0; }
@@ -100,9 +117,14 @@ public:
 		return out;
 	}
 
+	operator bool() const {
+		return data;
+	}
+
  	T* operator->() const { return data; }
  	T& operator*()  const { return *data; }
 
+	friend class Weak<T>;
 };
 
 template <typename T>
@@ -158,6 +180,20 @@ public:
 		if(state == nullptr)
 			return false;
 		return state->has_references();
+	}
+
+	Shared<T> lock(){
+		Shared<T> out;
+		// We need to be very careful about how we increment the count
+		// as another thread may be deleting the last shared pointer
+
+		if(SharedInternal::inc_weak_shared(this->state) > 0){
+			// There was already a shared pointer so we can copy the pointer and state
+			out.state = this->state;
+			out.data = this->data;
+		}
+
+		return out;
 	}
 
  	T* operator->() const { return data; }
